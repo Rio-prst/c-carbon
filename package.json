@@ -1,0 +1,19 @@
+{
+  "name": "c-carbon",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Farm Risk & Carbon Platform competition MVP",
+  "packageManager": "pnpm@11.9.0",
+  "engines": {
+    "node": ">=22.14.0",
+    "pnpm": ">=11.9.0"
+  },
+  "scripts": {
+    "mobile:install": "pnpm --filter c-carbon-mobile install",
+    "backend:install": "pnpm --filter c-carbon-backend install",
+    "mobile:start": "pnpm --filter c-carbon-mobile run start",
+    "mobile:typecheck": "pnpm --filter c-carbon-mobile run typecheck",
+    "backend:start:dev": "pnpm --filter c-carbon-backend run start:dev",
+    "backend:typecheck": "pnpm --filter c-carbon-backend run typecheck"
+  }
+}

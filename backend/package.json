@@ -1,0 +1,6 @@
+{
+  "name": "c-carbon-backend",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Farm Risk & Carbon Platform backend API (NestJS)"
+}

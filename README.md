@@ -57,7 +57,7 @@ farm-risk-carbon-platform/
 Make sure you have the following installed:
 
 - Node.js
-- npm
+- pnpm (workspace manager)
 - Expo Go
 - PostgreSQL
 
@@ -70,18 +70,10 @@ cd farm-risk-carbon-platform
 
 ### 2. Install Dependencies
 
-Install mobile dependencies:
+The repository uses a **pnpm workspace** (`pnpm-workspace.yaml`). All dependencies are installed from the root:
 
 ```bash
-cd mobile
-npm install
-```
-
-Install backend dependencies:
-
-```bash
-cd ../backend
-npm install
+pnpm install
 ```
 
 ### 3. Configure Environment Variables
@@ -96,13 +88,19 @@ backend/
 └── .env
 ```
 
-Refer to the project documentation for the required environment variables.
+Refer to the project documentation for the required environment variables (see `backend/.env.example` for the backend variable list).
 
 ### 4. Run the Mobile App
 
 ```bash
+pnpm --filter c-carbon-mobile run start
+```
+
+or directly from the `mobile/` folder:
+
+```bash
 cd mobile
-npm run start
+pnpm start
 ```
 
 Open the application using Expo Go or an available emulator.
@@ -110,8 +108,14 @@ Open the application using Expo Go or an available emulator.
 ### 5. Run the Backend
 
 ```bash
+pnpm --filter c-carbon-backend run start:dev
+```
+
+or directly from the `backend/` folder:
+
+```bash
 cd backend
-npm run start:dev
+pnpm run start:dev
 ```
 
 The backend will run in development mode.

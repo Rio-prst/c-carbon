@@ -1,0 +1,54 @@
+# Environment
+.env
+.env.*
+!.env.example
+
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Build output
+dist/
+build/
+.expo/
+.webpack/
+*.tsbuildinfo
+
+# Mobile (Expo / React Native)
+mobile/.expo/
+mobile/dist/
+mobile/build/
+mobile/web-build/
+*.orig.*
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+
+# Backend (NestJS / Node)
+backend/dist/
+backend/coverage/
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+pnpm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Tests / coverage
+coverage/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Misc
+*.orig
+*.rej

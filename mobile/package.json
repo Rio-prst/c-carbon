@@ -1,0 +1,9 @@
+{
+  "name": "c-carbon-mobile",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Farm Risk & Carbon Platform mobile app (Expo / React Native)",
+  "scripts": {
+    "start": "expo start"
+  }
+}
