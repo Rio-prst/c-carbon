@@ -1,72 +1,171 @@
 # Farm Risk & Carbon Platform
 
-Development knowledge base for the **Farm Risk & Carbon Platform** competition MVP.
+Competition MVP for a digital platform that connects farm records, insurance, sustainability scoring, rewards, and carbon project readiness.
 
-This repository is a simple monorepo with:
-- `mobile/` — React Native + Expo + TypeScript + Expo Router
-- `backend/` — NestJS + TypeScript + REST API
-- `docs/` — product, design, architecture, database, API, business rules, scope, and development guidance
+## Overview
 
-## Product in one sentence
+The platform builds a longitudinal **Digital Farm Track Record** that connects:
 
-The platform builds a longitudinal **digital farm track record** that turns farm activities and performance into economic value through:
+```
+Digital Farm ID → Insurance → Farm Data → Sustainability Score →
+Rewards → Carbon Readiness → Aggregation → Candidate Carbon Project
+```
 
-**Digital Farm ID → Insurance → Farm Data → Farm Sustainability Score → Rewards → Carbon Readiness → Aggregation → Candidate Carbon Project → Corporate View**
+The MVP includes three main roles:
 
-The core asset is the longitudinal farm track record. It connects farmer, insurance, sustainability, carbon, and corporate use cases.
+- **FARMER** — manage farm, insurance, farm data, score, rewards, and carbon readiness
+- **CORPORATE** — view aggregated carbon project information
+- **ADMIN** — review farm data and manage candidate carbon projects
 
-## Documentation hierarchy
+## Tech Stack
 
-When implementing anything, read the relevant documents in this order:
+### Mobile
 
-1. `AGENTS.md` — global engineering rules
-2. `docs/PRD.md` — product requirements and source-of-truth summary
-3. `docs/MVP-SCOPE.md` — what is and is not in the competition MVP
-4. `docs/DESIGN-SYSTEM.md` — visual language and UI implementation rules
-5. `docs/UI-SPEC.md` — screen-level UI intent
-6. `docs/BUSINESS-RULES.md` — domain rules and state transitions
-7. `docs/DATABASE.md` + `docs/ERD.md` — persistence model
-8. `docs/API.md` — frontend/backend contract
-9. `docs/ARCHITECTURE.md` — code organization
-10. `TASKS.md` + `docs/DEVELOPMENT.md` — implementation order and workflow
+- React Native
+- Expo
+- TypeScript
+- Expo Router
 
-If two documents appear to conflict, do not silently choose one. Stop and inspect the PRD/source requirement and document the ambiguity.
+### Backend
 
-## Source of truth
+- NestJS
+- TypeScript
+- REST API
 
-`Farm_Risk_Carbon_Platform_PRD_v2.pdf` is the product source of truth for this project.
+### Database & Infrastructure
 
-These Markdown files turn the PRD into agent-friendly development knowledge. They must not introduce product features that are outside the PRD without marking them as **Recommendation**, **Assumption**, or **TBD**.
+- PostgreSQL
+- Token-based authentication
+- Monorepo
 
-## MVP golden path
+## Project Structure
 
-Register → Create Farm → Insurance Active → Submit Farm Data → Score → Reward → Carbon Readiness → Candidate Project → Corporate Dashboard
+```
+farm-risk-carbon-platform/
+├── mobile/          # React Native + Expo application
+├── backend/         # NestJS REST API
+├── docs/            # Product & engineering documentation
+├── AGENTS.md        # Engineering rules
+├── TASKS.md         # Development tasks
+└── README.md
+```
 
-## MVP roles
+## Getting Started
 
-- `FARMER`
-- `CORPORATE`
-- `ADMIN`
+### Prerequisites
 
-## Important product boundaries
+Make sure you have the following installed:
 
-- The platform is **not** an insurance company.
-- Real underwriting and policy issuance belong to a licensed insurance partner.
-- FSS and CRS are internal platform indicators; they are **not carbon credits**.
-- MVP corporate views show aggregate project information, not individual farmer identities.
-- Real carbon purchasing, registry issuance, MRV, and real revenue distribution are future roadmap items.
-- Do not present conceptual future functionality as already available.
+- Node.js
+- npm
+- Expo Go
+- PostgreSQL
 
-## Development philosophy
+### 1. Clone the Repository
 
-Prefer the smallest implementation that satisfies the PRD.
+```bash
+git clone <repository-url>
+cd farm-risk-carbon-platform
+```
 
-Do not add:
-- unnecessary shared packages
-- premature abstractions
-- excessive state-management libraries
-- native modules when an Expo API/core React Native solution is enough
-- speculative features
-- decorative UI without product purpose
+### 2. Install Dependencies
 
-The app should feel like a coherent product designed by a product team, not a collection of AI-generated screens.
+Install mobile dependencies:
+
+```bash
+cd mobile
+npm install
+```
+
+Install backend dependencies:
+
+```bash
+cd ../backend
+npm install
+```
+
+### 3. Configure Environment Variables
+
+Create the required environment files:
+
+```
+mobile/
+└── .env
+
+backend/
+└── .env
+```
+
+Refer to the project documentation for the required environment variables.
+
+### 4. Run the Mobile App
+
+```bash
+cd mobile
+npm run start
+```
+
+Open the application using Expo Go or an available emulator.
+
+### 5. Run the Backend
+
+```bash
+cd backend
+npm run start:dev
+```
+
+The backend will run in development mode.
+
+## Documentation
+
+Detailed product and engineering documentation is available in `docs/`.
+
+| Document             | Description                  |
+| --------------------- | ----------------------------- |
+| `PRD.md`              | Product requirements          |
+| `MVP-SCOPE.md`        | MVP scope and boundaries      |
+| `DESIGN-SYSTEM.md`    | UI design system              |
+| `UI-SPEC.md`          | Screen specifications         |
+| `BUSINESS-RULES.md`   | Business and domain rules     |
+| `DATABASE.md`         | Database design                |
+| `ERD.md`              | Entity relationship diagram   |
+| `API.md`              | API contract                  |
+| `ARCHITECTURE.md`     | Code architecture             |
+| `DEVELOPMENT.md`      | Development workflow          |
+
+For AI-assisted development, start with `AGENTS.md`.
+
+## Product Boundaries
+
+This project is a competition MVP, not a production insurance or carbon-credit platform.
+
+- The platform is not an insurance company.
+- Real underwriting and policy issuance belong to licensed insurance partners.
+- FSS and CRS are internal platform indicators, not carbon credits.
+- Corporate views use aggregated project information.
+- Real MRV, registry issuance, carbon trading, and revenue distribution are outside the MVP.
+
+## Development Principles
+
+The implementation should remain simple and aligned with the PRD.
+
+- Build the smallest solution that satisfies the MVP.
+- Prefer existing Expo and React Native capabilities before adding native dependencies.
+- Avoid premature abstractions.
+- Keep business rules explicit and explainable.
+- Avoid speculative features.
+- Do not introduce features outside the PRD without marking them as Recommendation, Assumption, or TBD.
+
+## Status
+
+**Competition MVP — In Development**
+
+The current focus is delivering the core farmer, corporate, and admin flows with a functional mobile application and backend.
+
+## Source of Truth
+
+The original product requirements are based on:
+
+`Farm_Risk_Carbon_Platform_PRD_v2.pdf`
+
+The Markdown documentation in this repository translates the PRD into implementation-ready guidance.
