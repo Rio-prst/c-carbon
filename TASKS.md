@@ -12,7 +12,7 @@ Status:
 - [x] Initialize monorepo
 - [x] Initialize Expo mobile app
 - [x] Initialize NestJS backend
-- [ ] Configure TypeScript strict mode
+- [x] Configure TypeScript strict mode
 - [ ] Configure environment files
 - [ ] Configure PostgreSQL connection
 - [ ] Add design tokens/theme
