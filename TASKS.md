@@ -10,7 +10,7 @@ Status:
 ## Phase 0 — Foundation
 
 - [x] Initialize monorepo
-- [ ] Initialize Expo mobile app
+- [x] Initialize Expo mobile app
 - [ ] Initialize NestJS backend
 - [ ] Configure TypeScript strict mode
 - [ ] Configure environment files
