@@ -1,3 +1,6 @@
 packages:
   - mobile
   - backend
+allowBuilds:
+  '@parcel/watcher': true
+  unrs-resolver: true
