@@ -14,8 +14,8 @@ Status:
 - [x] Initialize NestJS backend
 - [x] Configure TypeScript strict mode
 - [x] Configure environment files
-- [~] Configure PostgreSQL connection
-- [ ] Add design tokens/theme
+- [x] Configure PostgreSQL connection
+- [x] Add design tokens/theme
 - [ ] Add base UI primitives
 - [ ] Add database migration tooling
 
