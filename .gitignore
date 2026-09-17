@@ -29,6 +29,7 @@ mobile/web-build/
 # Backend (NestJS / Node)
 backend/dist/
 backend/coverage/
+backend/src/generated/
 
 # Logs
 logs/

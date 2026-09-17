@@ -3,4 +3,8 @@ packages:
   - backend
 allowBuilds:
   '@parcel/watcher': true
+  '@prisma/engines': true
+  prisma: true
   unrs-resolver: true
+overrides:
+  react-dom: 19.2.3

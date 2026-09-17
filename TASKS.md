@@ -13,8 +13,8 @@ Status:
 - [x] Initialize Expo mobile app
 - [x] Initialize NestJS backend
 - [x] Configure TypeScript strict mode
-- [ ] Configure environment files
-- [ ] Configure PostgreSQL connection
+- [x] Configure environment files
+- [~] Configure PostgreSQL connection
 - [ ] Add design tokens/theme
 - [ ] Add base UI primitives
 - [ ] Add database migration tooling
