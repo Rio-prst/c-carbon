@@ -21,7 +21,7 @@ Status:
 
 ## Phase 1 — Authentication
 
-- [ ] User schema
+- [x] User schema
 - [ ] Register API
 - [ ] Login API
 - [ ] JWT strategy
