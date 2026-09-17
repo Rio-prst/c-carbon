@@ -16,5 +16,11 @@ export default defineConfig({
     url:
       process.env.DIRECT_URL ??
       'postgres://postgres:postgres@localhost:5432/c-carbon',
+    // Throwaway database used by `prisma migrate dev` to compare schema and
+    // detect drift. Supabase cannot create databases on the fly, so point this
+    // at a manually created database (e.g. c_carbon_shadow) on the same
+    // cluster. It is reset by Prisma on every migration and never holds data.
+    // `prisma migrate deploy` (production) does NOT use it.
+    shadowDatabaseUrl: process.env.SHADOW_DATABASE_URL,
   },
 });

@@ -255,3 +255,13 @@ Every schema change must:
 3. update `docs/ERD.md` if relationships change
 4. update API DTOs if public contracts change
 5. update seed data/tests where applicable
+
+# Prisma → Supabase migration workflow
+
+- `pnpm prisma:generate` — regenerate the Prisma client (also runs on prebuild/prestart).
+- `pnpm prisma:migrate -- --name <name>` — `prisma migrate dev`, used only when authoring a new migration. Requires:
+  - `DIRECT_URL` (session-mode, port 5432) — never the transaction pooler (6543).
+  - `SHADOW_DATABASE_URL` pointing at a throwaway database (e.g. `c_carbon_shadow`) pre-created on the same cluster; Supabase cannot create databases on the fly, and Prisma resets the shadow DB on every run.
+- `pnpm prisma:deploy` — `prisma migrate deploy`, applies committed migrations to the remote database (used for anything that is not local authoring; does not need a shadow database).
+
+Shadow databases never hold real data and are not visible in the Supabase dashboard — that is expected.

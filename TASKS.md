@@ -17,7 +17,7 @@ Status:
 - [x] Configure PostgreSQL connection
 - [x] Add design tokens/theme
 - [x] Add base UI primitives
-- [ ] Add database migration tooling
+- [x] Add database migration tooling
 
 ## Phase 1 — Authentication
 
