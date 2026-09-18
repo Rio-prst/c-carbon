@@ -1,10 +1,15 @@
 import { ConflictException } from '@nestjs/common';
+import { jest } from '@jest/globals';
 import * as bcrypt from 'bcryptjs';
 import { AuthService } from './auth.service';
+import type {
+  CreateUserInput,
+  PublicUser,
+} from '../users/users.repository.interface';
 
 describe('AuthService', () => {
   let service: AuthService;
-  const userCreate = jest.fn();
+  const userCreate = jest.fn<(input: CreateUserInput) => Promise<PublicUser>>();
 
   beforeEach(() => {
     userCreate.mockReset();
@@ -51,7 +56,7 @@ describe('AuthService', () => {
   it('throws ConflictException on duplicate email', async () => {
     const err = new Error('unique violation');
     (err as { code?: string }).code = 'P2002';
-    userCreate.mockRejectedValue(err);
+    userCreate.mockImplementation(() => Promise.reject(err));
 
     await expect(
       service.register({
