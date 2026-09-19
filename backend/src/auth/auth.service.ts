@@ -1,8 +1,16 @@
-import { ConflictException, Inject, Injectable } from '@nestjs/common';
+import {
+  ConflictException,
+  Inject,
+  Injectable,
+  UnauthorizedException,
+} from '@nestjs/common';
+import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcryptjs';
 import { USERS_REPOSITORY } from '../users/users.repository.interface';
 import type { IUsersRepository } from '../users/users.repository.interface';
 import { RegisterDto } from './dto/register.dto';
+import { LoginDto } from './dto/login.dto';
+import type { JwtPayload } from './types/jwt-payload';
 
 const BCRYPT_ROUNDS = 10;
 
@@ -11,6 +19,7 @@ export class AuthService {
   constructor(
     @Inject(USERS_REPOSITORY)
     private readonly usersRepository: IUsersRepository,
+    private readonly jwtService: JwtService,
   ) {}
 
   async register(dto: RegisterDto) {
@@ -45,5 +54,59 @@ export class AuthService {
       'code' in error &&
       (error as { code?: unknown }).code === 'P2002'
     );
+  }
+
+  async login(dto: LoginDto) {
+    const user = await this.usersRepository.findByEmail(dto.email);
+
+    if (!user) {
+      throw this.invalidCredentials();
+    }
+
+    const passwordMatches = await bcrypt.compare(
+      dto.password,
+      user.passwordHash,
+    );
+
+    if (!passwordMatches) {
+      throw this.invalidCredentials();
+    }
+
+    const payload: JwtPayload = { sub: user.id, role: user.role };
+    const token = await this.jwtService.signAsync(payload);
+
+    return {
+      token,
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+      },
+    };
+  }
+
+  async me(userId: string) {
+    const user = await this.usersRepository.findById(userId);
+
+    if (!user) {
+      throw new UnauthorizedException({
+        statusCode: 401,
+        code: 'UNAUTHORIZED',
+        message: 'Account not found',
+        details: {},
+      });
+    }
+
+    return user;
+  }
+
+  private invalidCredentials(): UnauthorizedException {
+    return new UnauthorizedException({
+      statusCode: 401,
+      code: 'INVALID_CREDENTIALS',
+      message: 'Invalid email or password',
+      details: {},
+    });
   }
 }

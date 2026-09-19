@@ -80,4 +80,62 @@ describe('UsersRepository (integration)', () => {
     expect(err).not.toBeNull();
     expect((err as { code?: string }).code).toBe('P2002');
   });
+
+  it('returns the stored user including the password hash by email', async () => {
+    const created = await repository.create({
+      name: 'Budi',
+      email: 'budi@example.com',
+      passwordHash: 'hashed-password',
+      role: 'FARMER',
+    });
+
+    const found = await repository.findByEmail('budi@example.com');
+
+    expect(found).not.toBeNull();
+    expect(found).toEqual(
+      expect.objectContaining({
+        id: created.id,
+        name: 'Budi',
+        email: 'budi@example.com',
+        passwordHash: 'hashed-password',
+        role: 'FARMER',
+      }),
+    );
+    expect(found?.createdAt).toBeInstanceOf(Date);
+  });
+
+  it('returns null when no user matches the email', async () => {
+    await expect(
+      repository.findByEmail('missing@example.com'),
+    ).resolves.toBeNull();
+  });
+
+  it('returns the public user by id without leaking the password hash', async () => {
+    const created = await repository.create({
+      name: 'Budi',
+      email: 'budi@example.com',
+      passwordHash: 'hashed-password',
+      role: 'FARMER',
+    });
+
+    const found = await repository.findById(created.id);
+
+    expect(found).not.toBeNull();
+    expect(found).toEqual(
+      expect.objectContaining({
+        id: created.id,
+        name: 'Budi',
+        email: 'budi@example.com',
+        role: 'FARMER',
+      }),
+    );
+    expect(found?.createdAt).toBeInstanceOf(Date);
+    expect((found as { passwordHash?: string }).passwordHash).toBeUndefined();
+  });
+
+  it('returns null when no user matches the id', async () => {
+    await expect(
+      repository.findById('00000000-0000-0000-0000-000000000000'),
+    ).resolves.toBeNull();
+  });
 });

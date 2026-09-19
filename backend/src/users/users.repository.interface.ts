@@ -17,6 +17,19 @@ export type PublicUser = {
   createdAt: Date;
 };
 
+export type AuthUser = {
+  id: string;
+  name: string;
+  email: string;
+  role: UserRole;
+  passwordHash: string;
+  createdAt: Date;
+};
+
 export interface IUsersRepository {
   create(input: CreateUserInput): Promise<PublicUser>;
+
+  findByEmail(email: string): Promise<AuthUser | null>;
+
+  findById(id: string): Promise<PublicUser | null>;
 }
