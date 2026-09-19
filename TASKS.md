@@ -22,10 +22,10 @@ Status:
 ## Phase 1 — Authentication
 
 - [x] User schema
-- [ ] Register API
-- [ ] Login API
-- [ ] JWT strategy
-- [ ] Role guard
+- [x] Register API
+- [x] Login API
+- [x] JWT strategy
+- [x] Role guard
 - [ ] Secure mobile token storage
 - [ ] Login screen
 - [ ] Register screen

@@ -42,6 +42,9 @@ yarn-error.log*
 # Tests / coverage
 coverage/
 
+# Jest cache (kept off the C: drive)
+.jest-cache/
+
 # OS / editor
 .DS_Store
 Thumbs.db
