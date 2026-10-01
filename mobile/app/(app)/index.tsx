@@ -1,4 +1,6 @@
+import { router } from 'expo-router';
 import { StyleSheet, View } from 'react-native';
+import { MapPin } from 'lucide-react-native';
 import { Button, Screen, Text } from '../../components';
 import { colors, spacing } from '../../lib/theme';
 import { useAuth } from '../../store/auth';
