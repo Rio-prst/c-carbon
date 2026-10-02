@@ -1,5 +1,10 @@
 import { Injectable } from '@nestjs/common';
-import type { FSSBreakdown, FSSInput, FSSResult, IFSSService } from './fss.service.interface';
+import type {
+  FSSBreakdown,
+  FSSInput,
+  FSSResult,
+  IFSSService,
+} from './fss.service.interface';
 
 @Injectable()
 export class FSSService implements IFSSService {
@@ -31,28 +36,35 @@ export class FSSService implements IFSSService {
 
     // Calculate each component
     const productivity = this.calculateProductivity(yieldKg);
-    const inputEfficiency = this.calculateInputEfficiency(fertilizerUsage, pesticideUsage);
+    const inputEfficiency = this.calculateInputEfficiency(
+      fertilizerUsage,
+      pesticideUsage,
+    );
     const waterEfficiency = this.calculateWaterEfficiency(waterUsage);
-    const fertilizerManagement = this.calculateFertilizerManagement(fertilizerUsage);
-    const wasteManagement = this.calculateWasteManagement(wasteManagementPractice);
+    const fertilizerManagement =
+      this.calculateFertilizerManagement(fertilizerUsage);
+    const wasteManagement = this.calculateWasteManagement(
+      wasteManagementPractice,
+    );
     const soilConservation = this.calculateSoilConservation(soilPractice);
     const energy = this.calculateEnergy(energyUsage);
     const riskHistory = this.calculateRiskHistory(farmDataStatus);
     const dataConsistency = this.calculateDataConsistency(input);
-    const lowCarbonPracticeScore = this.calculateLowCarbonPractice(lowCarbonPractice);
+    const lowCarbonPracticeScore =
+      this.calculateLowCarbonPractice(lowCarbonPractice);
 
     // Weight and aggregate
     const value = Math.round(
-      productivity * 0.20 +
-      inputEfficiency * 0.15 +
-      waterEfficiency * 0.15 +
-      fertilizerManagement * 0.10 +
-      wasteManagement * 0.10 +
-      soilConservation * 0.10 +
-      energy * 0.05 +
-      riskHistory * 0.05 +
-      dataConsistency * 0.05 +
-      lowCarbonPracticeScore * 0.05
+      productivity * 0.2 +
+        inputEfficiency * 0.15 +
+        waterEfficiency * 0.15 +
+        fertilizerManagement * 0.1 +
+        wasteManagement * 0.1 +
+        soilConservation * 0.1 +
+        energy * 0.05 +
+        riskHistory * 0.05 +
+        dataConsistency * 0.05 +
+        lowCarbonPracticeScore * 0.05,
     );
 
     const breakdown: FSSBreakdown = {
@@ -83,7 +95,10 @@ export class FSSService implements IFSSService {
     return Math.min(100, Math.round((yieldKg / 10000) * 100));
   }
 
-  private calculateInputEfficiency(fertilizerUsage?: number, pesticideUsage?: number): number {
+  private calculateInputEfficiency(
+    fertilizerUsage?: number,
+    pesticideUsage?: number,
+  ): number {
     if (fertilizerUsage == null && pesticideUsage == null) return 0;
     // Lower usage = better efficiency (normalized against reference)
     const totalInput = (fertilizerUsage || 0) + (pesticideUsage || 0);
@@ -107,11 +122,11 @@ export class FSSService implements IFSSService {
   private calculateWasteManagement(wasteManagementPractice?: string): number {
     if (!wasteManagementPractice) return 0;
     const practices: Record<string, number> = {
-      'composting': 100,
-      'recycling': 80,
-      'incineration': 60,
-      'landfill': 40,
-      'none': 20,
+      composting: 100,
+      recycling: 80,
+      incineration: 60,
+      landfill: 40,
+      none: 20,
     };
     return practices[wasteManagementPractice.toLowerCase()] ?? 50;
   }
@@ -119,12 +134,12 @@ export class FSSService implements IFSSService {
   private calculateSoilConservation(soilPractice?: string): number {
     if (!soilPractice) return 0;
     const practices: Record<string, number> = {
-      'cover_cropping': 100,
-      'crop_rotation': 90,
-      'no_till': 85,
-      'reduced_till': 70,
-      'conventional': 50,
-      'none': 30,
+      cover_cropping: 100,
+      crop_rotation: 90,
+      no_till: 85,
+      reduced_till: 70,
+      conventional: 50,
+      none: 30,
     };
     return practices[soilPractice.toLowerCase()] ?? 50;
   }
@@ -149,7 +164,7 @@ export class FSSService implements IFSSService {
       input.fertilizerUsage,
       input.pesticideUsage,
     ];
-    const filledCount = fields.filter(f => f != null).length;
+    const filledCount = fields.filter((f) => f != null).length;
     const totalCount = fields.length;
     return Math.round((filledCount / totalCount) * 100);
   }

@@ -5,8 +5,10 @@ import {
   INSURANCE_REPOSITORY,
   InsuranceRepository,
 } from './insurance.repository';
+import { FarmsModule } from '../farms/farms.module';
 
 @Module({
+  imports: [FarmsModule],
   controllers: [InsuranceController],
   providers: [
     InsuranceService,

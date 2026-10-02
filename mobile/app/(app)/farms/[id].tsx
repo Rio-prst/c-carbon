@@ -1,17 +1,19 @@
 import { Link, router, useLocalSearchParams } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
-import { Pressable, View } from 'react-native';
+import { Linking, Pressable, View } from 'react-native';
 import { MapPin } from 'lucide-react-native';
 import {
   Button,
   Card,
   ErrorState,
+  Screen,
   Skeleton,
   StatusBadge,
   Text,
 } from '../../../components';
 import { colors, spacing } from '../../../lib/theme';
 import { farmStatusMeta, formatCoordinate, formatLandArea } from '../../../lib/farm';
+import { ApiClientError } from '../../../lib/api';
 import { getFarm } from '../../../services/farms';
 import { useAuth } from '../../../store/auth';
 import type { Farm } from '../../../types/farm';
@@ -39,7 +41,7 @@ export default function FarmDetailScreen() {
       .catch((error: unknown) =>
         setState({
           kind: 'error',
-          notFound: error instanceof NotFoundError || (error instanceof Error && error.message === 'Farm tidak ditemukan'),
+          notFound: error instanceof ApiClientError && error.statusCode === 404,
           message: error instanceof Error ? error.message : 'Gagal memuat lahan',
         }),
       );
@@ -53,9 +55,11 @@ export default function FarmDetailScreen() {
     <Screen padded>
       <View style={styles.header}>
         <Link href="/farms" asChild>
-          <Text variant="bodyMedium" color={colors.brand.forest700}>
-            ← Kembali
-          </Text>
+          <Pressable>
+            <Text variant="bodyMedium" color={colors.brand.forest700}>
+              Kembali
+            </Text>
+          </Pressable>
         </Link>
         <Text variant="h1" color={colors.brand.forest700}>
           Detail Lahan

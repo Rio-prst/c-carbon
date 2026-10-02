@@ -1,26 +1,33 @@
 import { Injectable } from '@nestjs/common';
-import type { IEvidenceRepository } from './farm-data.repository.interface';
-import { CreateEvidenceInput, EvidenceRecord } from './farm-data.repository.interface';
+import { randomUUID } from 'node:crypto';
+import type {
+  CreateEvidenceInput,
+  EvidenceRecord,
+  IEvidenceRepository,
+} from './farm-data.repository.interface';
 
 @Injectable()
 export class EvidenceRepository implements IEvidenceRepository {
   private evidenceMap: Map<string, EvidenceRecord> = new Map();
 
-  async create(input: CreateEvidenceInput): Promise<EvidenceRecord> {
-    const uploadedAt = input.url ? new Date() : new Date();
+  create(input: CreateEvidenceInput): Promise<EvidenceRecord> {
     const evidence: EvidenceRecord = {
-      id: crypto.randomUUID(),
+      id: randomUUID(),
       farmDataId: input.farmDataId,
       type: input.type,
       url: input.url,
       fileName: input.fileName,
-      uploadedAt,
+      uploadedAt: new Date(),
     };
     this.evidenceMap.set(evidence.id, evidence);
-    return evidence;
+    return Promise.resolve(evidence);
   }
 
-  async findByFarmDataId(farmDataId: string): Promise<EvidenceRecord[]> {
-    return Array.from(this.evidenceMap.values()).filter(e => e.farmDataId === farmDataId);
+  findByFarmDataId(farmDataId: string): Promise<EvidenceRecord[]> {
+    return Promise.resolve(
+      Array.from(this.evidenceMap.values()).filter(
+        (e) => e.farmDataId === farmDataId,
+      ),
+    );
   }
 }

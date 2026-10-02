@@ -1,5 +1,6 @@
 import {
   ScrollView,
+  ScrollViewProps,
   StyleProp,
   View,
   ViewProps,
@@ -8,11 +9,12 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors, screen as screenTokens } from '../lib/theme';
 
-type Props = Omit<ViewProps, 'style'> & {
-  padded?: boolean;
-  scroll?: boolean;
-  style?: StyleProp<ViewStyle>;
-};
+type Props = Omit<ViewProps, 'style'> &
+  Omit<ScrollViewProps, 'style' | 'contentContainerStyle'> & {
+    padded?: boolean;
+    scroll?: boolean;
+    style?: StyleProp<ViewStyle>;
+  };
 
 export function Screen({
   padded = true,

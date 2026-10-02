@@ -12,7 +12,6 @@ import {
   type IFarmsRepository,
 } from './farms.repository.interface';
 import { CreateFarmDto } from './dto/create-farm.dto';
-import type { FarmStatus } from '../generated/prisma/client.js';
 
 const DFID_PREFIX = 'CF';
 /** Maximum attempts to generate a unique Digital Farm ID before giving up. */
@@ -75,21 +74,34 @@ export class FarmsService {
     throw new ConflictException({
       statusCode: 409,
       code: 'DIGITAL_FARM_ID_COLLISION',
-      message:
-        'Could not generate a unique Digital Farm ID, please try again',
+      message: 'Could not generate a unique Digital Farm ID, please try again',
       details: {},
     });
   }
 
-  async listFarms(userId: string): Promise<ReturnType<FarmsService['serializeFarm']>[]> {
+  async listFarms(
+    userId: string,
+  ): Promise<ReturnType<FarmsService['serializeFarm']>[]> {
     const farms = await this.farmsRepository.findByUserId(userId);
-    return farms.map(farm => this.serializeFarm(farm));
+    return farms.map((farm) => this.serializeFarm(farm));
   }
 
-  async getFarm(userId: string, farmId: string): Promise<ReturnType<FarmsService['serializeFarm']>> {
+  async getFarm(
+    userId: string,
+    farmId: string,
+  ): Promise<ReturnType<FarmsService['serializeFarm']>> {
+    const farm = await this.assertOwnership(userId, farmId);
+    return this.serializeFarm(farm);
+  }
+
+  /**
+   * Ensures the farm exists and belongs to `userId`.
+   * Missing and non-owned farms both return 404 so ownership cannot be probed.
+   */
+  async assertOwnership(userId: string, farmId: string): Promise<FarmRecord> {
     const farm = await this.farmsRepository.findById(farmId);
 
-    if (!farm) {
+    if (!farm || farm.userId !== userId) {
       throw new NotFoundException({
         statusCode: 404,
         code: 'FARM_NOT_FOUND',
@@ -98,16 +110,7 @@ export class FarmsService {
       });
     }
 
-    if (farm.userId !== userId) {
-      throw new NotFoundException({
-        statusCode: 404,
-        code: 'FARM_NOT_FOUND',
-        message: 'Farm not found',
-        details: {},
-      });
-    }
-
-    return this.serializeFarm(farm);
+    return farm;
   }
 
   private generateDigitalFarmId(): string {

@@ -1,1 +1,8 @@
-export { INSURANCE_REPOSITORY, type InsuranceStatus, type CreateInsuranceInput, type InsuranceRecord, type IInsuranceRepository, InsuranceRepository } from './insurance.repository';
+export {
+  INSURANCE_REPOSITORY,
+  type InsuranceStatus,
+  type CreateInsuranceInput,
+  type InsuranceRecord,
+  type IInsuranceRepository,
+  InsuranceRepository,
+} from './insurance.repository';

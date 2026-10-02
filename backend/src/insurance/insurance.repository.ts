@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { randomUUID } from 'node:crypto';
 
 export const INSURANCE_REPOSITORY = Symbol('INSURANCE_REPOSITORY');
 
@@ -21,7 +22,7 @@ export type InsuranceRecord = {
 
 export interface IInsuranceRepository {
   findByFarmId(farmId: string): Promise<InsuranceRecord | null>;
-  
+
   create(input: CreateInsuranceInput): Promise<InsuranceRecord>;
 }
 
@@ -29,14 +30,14 @@ export interface IInsuranceRepository {
 export class InsuranceRepository implements IInsuranceRepository {
   private insuranceMap: Map<string, InsuranceRecord> = new Map();
 
-  async findByFarmId(farmId: string): Promise<InsuranceRecord | null> {
-    return this.insuranceMap.get(farmId) ?? null;
+  findByFarmId(farmId: string): Promise<InsuranceRecord | null> {
+    return Promise.resolve(this.insuranceMap.get(farmId) ?? null);
   }
 
-  async create(input: CreateInsuranceInput): Promise<InsuranceRecord> {
+  create(input: CreateInsuranceInput): Promise<InsuranceRecord> {
     const now = new Date();
     const insurance: InsuranceRecord = {
-      id: crypto.randomUUID(),
+      id: randomUUID(),
       farmId: input.farmId,
       partner: input.partner,
       status: input.status,
@@ -44,6 +45,6 @@ export class InsuranceRepository implements IInsuranceRepository {
       updatedAt: now,
     };
     this.insuranceMap.set(input.farmId, insurance);
-    return insurance;
+    return Promise.resolve(insurance);
   }
 }

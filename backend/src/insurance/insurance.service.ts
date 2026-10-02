@@ -1,36 +1,28 @@
-import {
-  Inject,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import {
   INSURANCE_REPOSITORY,
-  type CreateInsuranceInput,
-  type InsuranceRecord,
   type IInsuranceRepository,
-  type InsuranceStatus,
+  type InsuranceRecord,
 } from './insurance.repository.interface';
+import { FarmsService } from '../farms/farms.service';
 
 @Injectable()
 export class InsuranceService {
   constructor(
     @Inject(INSURANCE_REPOSITORY)
     private readonly insuranceRepository: IInsuranceRepository,
+    private readonly farmsService: FarmsService,
   ) {}
 
-  async getInsurance(farmId: string): Promise<InsuranceRecord | null> {
-    return this.insuranceRepository.findByFarmId(farmId);
-  }
-
-  async createInsurance(
+  /**
+   * Insurance is read-only for farmers in MVP, so the farmer can only read the
+   * record of a farm they own.
+   */
+  async getInsurance(
+    userId: string,
     farmId: string,
-    partner: string,
-    status: InsuranceStatus = 'PENDING',
-  ): Promise<InsuranceRecord> {
-    return this.insuranceRepository.create({
-      farmId,
-      partner,
-      status,
-    });
+  ): Promise<InsuranceRecord | null> {
+    await this.farmsService.assertOwnership(userId, farmId);
+    return this.insuranceRepository.findByFarmId(farmId);
   }
 }

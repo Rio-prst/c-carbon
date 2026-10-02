@@ -3,29 +3,17 @@ import { ScoringService } from './scoring.service';
 import { ScoringController } from './scoring.controller';
 import { FSSService } from './fss.service';
 import { ScoreRepository } from './score.repository';
-import {
-  FSS_SERVICE,
-  IFSSService,
-} from './fss.service.interface';
-import {
-  FSS_REPOSITORY,
-  IScoreRepository,
-} from './score.repository.interface';
+import { FSS_SERVICE } from './fss.service.interface';
+import { SCORE_REPOSITORY } from './score.repository.interface';
+import { FarmsModule } from '../farms/farms.module';
 
 @Module({
+  imports: [FarmsModule],
   controllers: [ScoringController],
   providers: [
     ScoringService,
-    FSSService,
-    {
-      provide: FSS_SERVICE,
-      useClass: FSSService,
-    },
-    ScoreRepository,
-    {
-      provide: FSS_REPOSITORY,
-      useClass: ScoreRepository,
-    },
+    { provide: FSS_SERVICE, useClass: FSSService },
+    { provide: SCORE_REPOSITORY, useClass: ScoreRepository },
   ],
   exports: [ScoringService],
 })

@@ -2,27 +2,28 @@ import { Module } from '@nestjs/common';
 import { FarmDataService } from './farm-data.service';
 import { FarmDataController } from './farm-data.controller';
 import { FarmDataRepository } from './farm-data.repository';
-import { FarmDataSeasonService } from './farm-data-season.service';
-import { FarmDataSeasonController } from './farm-data-season.controller';
-import { FarmDataSeasonRepository } from './farm-data-season.repository';
+import { FarmSeasonRepository } from './farm-season.repository';
 import { EvidenceService } from './evidence.service';
 import { EvidenceController } from './evidence.controller';
 import { EvidenceRepository } from './evidence.repository';
+import {
+  EVIDENCE_REPOSITORY,
+  FARM_DATA_REPOSITORY,
+  FARM_SEASON_REPOSITORY,
+} from './farm-data.repository.interface';
+import { FarmsModule } from '../farms/farms.module';
+import { ScoringModule } from '../scoring/scoring.module';
 
 @Module({
-  controllers: [
-    FarmDataController,
-    FarmDataSeasonController,
-    EvidenceController,
-  ],
+  imports: [FarmsModule, ScoringModule],
+  controllers: [FarmDataController, EvidenceController],
   providers: [
     FarmDataService,
-    FarmDataSeasonService,
+    { provide: FARM_DATA_REPOSITORY, useClass: FarmDataRepository },
+    { provide: FARM_SEASON_REPOSITORY, useClass: FarmSeasonRepository },
     EvidenceService,
-    FarmDataRepository,
-    FarmDataSeasonRepository,
-    EvidenceRepository,
+    { provide: EVIDENCE_REPOSITORY, useClass: EvidenceRepository },
   ],
-  exports: [FarmDataService, FarmDataSeasonService, EvidenceService],
+  exports: [FarmDataService, EvidenceService],
 })
 export class FarmDataModule {}

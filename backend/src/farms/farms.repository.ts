@@ -5,7 +5,7 @@ import type {
   FarmRecord,
   IFarmsRepository,
 } from './farms.repository.interface';
-import type { Farm, FarmStatus } from '../generated/prisma/client.js';
+import type { FarmStatus } from '../generated/prisma/client.js';
 
 const farmSelect = {
   id: true,

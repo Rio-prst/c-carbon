@@ -8,6 +8,8 @@ import { AuthModule } from './auth/auth.module';
 import { FarmsModule } from './farms/farms.module';
 import { InsuranceModule } from './insurance/insurance.module';
 import { ScoringModule } from './scoring/scoring.module';
+import { RewardModule } from './rewards/reward.module';
+import { FarmDataModule } from './farm-data/farm-data.module';
 import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
 import { RolesGuard } from './auth/guards/roles.guard';
 import { ApiErrorFilter } from './common/api-error.filter';
@@ -21,6 +23,8 @@ import { PrismaModule } from './prisma/prisma.module';
     FarmsModule,
     InsuranceModule,
     ScoringModule,
+    FarmDataModule,
+    RewardModule,
   ],
   controllers: [AppController],
   providers: [

@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { randomUUID } from 'node:crypto';
 import type {
   CreateScoreInput,
   ScoreRecord,
@@ -17,10 +18,10 @@ export class ScoreRepository implements IScoreRepository {
     return this.scoreMap.get(farmId)!;
   }
 
-  async save(input: CreateScoreInput): Promise<ScoreRecord> {
+  save(input: CreateScoreInput): Promise<ScoreRecord> {
     const farmScores = this.getFarmScores(input.farmId);
     const score: ScoreRecord = {
-      id: crypto.randomUUID(),
+      id: randomUUID(),
       farmId: input.farmId,
       scoreType: input.scoreType,
       value: input.value,
@@ -29,12 +30,15 @@ export class ScoreRepository implements IScoreRepository {
       calculatedAt: new Date(),
     };
     farmScores.set(input.scoreType, score);
-    return score;
+    return Promise.resolve(score);
   }
 
-  async findByFarmId(farmId: string, scoreType: ScoreType): Promise<ScoreRecord | null> {
+  findByFarmId(
+    farmId: string,
+    scoreType: ScoreType,
+  ): Promise<ScoreRecord | null> {
     const farmScores = this.scoreMap.get(farmId);
-    if (!farmScores) return null;
-    return farmScores.get(scoreType) ?? null;
+    if (!farmScores) return Promise.resolve(null);
+    return Promise.resolve(farmScores.get(scoreType) ?? null);
   }
 }

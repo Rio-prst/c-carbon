@@ -2,7 +2,8 @@ export const FARM_SEASON_REPOSITORY = Symbol('FARM_SEASON_REPOSITORY');
 export const FARM_DATA_REPOSITORY = Symbol('FARM_DATA_REPOSITORY');
 export const EVIDENCE_REPOSITORY = Symbol('EVIDENCE_REPOSITORY');
 
-export type FarmDataStatus = 'SELF_REPORTED' | 'REVIEW' | 'VERIFIED' | 'REJECTED';
+export type FarmDataStatus =
+  'SELF_REPORTED' | 'REVIEW' | 'VERIFIED' | 'REJECTED';
 
 export type CreateFarmSeasonInput = {
   farmId: string;
@@ -13,6 +14,7 @@ export type CreateFarmSeasonInput = {
 };
 
 export type CreateFarmDataInput = {
+  farmId: string;
   farmSeasonId: string;
   yieldKg?: number;
   waterUsage?: number;
@@ -22,7 +24,6 @@ export type CreateFarmDataInput = {
   soilPractice?: string;
   energyUsage?: number;
   lowCarbonPractice?: boolean;
-  status?: FarmDataStatus;
 };
 
 export type CreateEvidenceInput = {
@@ -44,6 +45,7 @@ export type FarmSeasonRecord = {
 
 export type FarmDataRecord = {
   id: string;
+  farmId: string;
   farmSeasonId: string;
   yieldKg?: number;
   waterUsage?: number;
@@ -54,7 +56,7 @@ export type FarmDataRecord = {
   energyUsage?: number;
   lowCarbonPractice: boolean;
   status: FarmDataStatus;
-  submittedAt?: Date;
+  submittedAt: Date;
   createdAt: Date;
 };
 
@@ -69,26 +71,26 @@ export type EvidenceRecord = {
 
 export interface IFarmSeasonRepository {
   create(input: CreateFarmSeasonInput): Promise<FarmSeasonRecord>;
-  
+
   findByFarmId(farmId: string): Promise<FarmSeasonRecord[]>;
-  
+
   findById(id: string): Promise<FarmSeasonRecord | null>;
 }
 
 export interface IFarmDataRepository {
   create(input: CreateFarmDataInput): Promise<FarmDataRecord>;
-  
+
   findByFarmSeasonId(farmSeasonId: string): Promise<FarmDataRecord[]>;
-  
+
   findByFarmId(farmId: string): Promise<FarmDataRecord[]>;
-  
+
   findById(id: string): Promise<FarmDataRecord | null>;
-  
+
   updateStatus(id: string, status: FarmDataStatus): Promise<FarmDataRecord>;
 }
 
 export interface IEvidenceRepository {
   create(input: CreateEvidenceInput): Promise<EvidenceRecord>;
-  
+
   findByFarmDataId(farmDataId: string): Promise<EvidenceRecord[]>;
 }
