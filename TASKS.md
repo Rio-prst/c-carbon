@@ -26,58 +26,58 @@ Status:
 - [x] Login API
 - [x] JWT strategy
 - [x] Role guard
-- [ ] Secure mobile token storage
-- [ ] Login screen
-- [ ] Register screen
-- [ ] Auth redirect
+- [x] Secure mobile token storage
+- [x] Login screen
+- [x] Register screen
+- [x] Auth redirect
 
 ## Phase 2 — Farm
 
-- [ ] Farm schema
-- [ ] Farm API
-- [ ] Ownership authorization
-- [ ] Farm List
-- [ ] Farm Detail
-- [ ] Register Farm
-- [ ] Digital Farm ID generation
+- [x] Farm schema
+- [x] Farm API
+- [x] Ownership authorization
+- [x] Farm List
+- [x] Farm Detail
+- [x] Register Farm
+- [x] Digital Farm ID generation
 
 ## Phase 3 — Insurance
 
-- [ ] Insurance schema
-- [ ] Insurance API
+- [x] Insurance schema
+- [x] Insurance API
 - [ ] Insurance status UI
 - [ ] Pending/active/expired states
 
 ## Phase 4 — Farm Data
 
-- [ ] Farm season schema
-- [ ] Farm data schema
-- [ ] Evidence schema/storage strategy
-- [ ] Submit API
-- [ ] History API
+- [x] Farm season schema
+- [x] Farm data schema
+- [x] Evidence schema/storage strategy
+- [x] Submit API
+- [x] History API
 - [ ] Submit screen
 - [ ] History screen
 - [ ] Verification states
 
 ## Phase 5 — Scoring
 
-- [ ] FSS calculation service
+- [x] FSS calculation service
 - [ ] Normalization abstraction
-- [ ] FSS breakdown
-- [ ] Provisional score
+- [x] FSS breakdown
+- [x] Provisional score
 - [ ] Verified score
-- [ ] Score API
+- [x] Score API
 - [ ] Score screen
-- [ ] Unit tests
+- [x] Unit tests
 
 ## Phase 6 — Rewards
 
-- [ ] Reward event service
-- [ ] Tier calculation
-- [ ] Reward persistence
-- [ ] Rewards API
-- [ ] Rewards screen
-- [ ] Unit tests
+- [x] Reward event service
+- [x] Tier calculation
+- [x] Reward persistence
+- [x] Rewards API
+- [x] Rewards screen
+- [x] Unit tests
 
 ## Phase 7 — Carbon Readiness
 

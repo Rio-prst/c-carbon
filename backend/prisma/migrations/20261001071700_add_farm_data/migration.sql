@@ -15,6 +15,7 @@ CREATE INDEX "idx_farm_seasons_farm_id" ON "farm_seasons"("farm_id");
 -- Create farm_data table
 CREATE TABLE "farm_data" (
   "id" UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  "farm_id" UUID NOT NULL REFERENCES "farms"("id") ON DELETE CASCADE,
   "farm_season_id" UUID NOT NULL REFERENCES "farm_seasons"("id") ON DELETE CASCADE,
   "yield_kg" DECIMAL(10,2),
   "water_usage" DECIMAL(10,2),
@@ -24,10 +25,14 @@ CREATE TABLE "farm_data" (
   "soil_practice" VARCHAR(100),
   "energy_usage" DECIMAL(10,2),
   "low_carbon_practice" BOOLEAN DEFAULT FALSE,
-  "status" VARCHAR(20) DEFAULT 'SELF_REPORTED',
+  "status" VARCHAR(20) NOT NULL DEFAULT 'SELF_REPORTED',
+  "rejection_reason" TEXT,
   "submitted_at" TIMESTAMP WITH TIME ZONE,
   "created_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
 );
+
+-- Create index on farm_id
+CREATE INDEX "idx_farm_data_farm_id" ON "farm_data"("farm_id");
 
 -- Create index on farm_season_id
 CREATE INDEX "idx_farm_data_farm_season_id" ON "farm_data"("farm_season_id");
