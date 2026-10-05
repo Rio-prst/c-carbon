@@ -25,6 +25,11 @@ import { RewardModule } from '../rewards/reward.module';
     EvidenceService,
     { provide: EVIDENCE_REPOSITORY, useClass: EvidenceRepository },
   ],
-  exports: [FarmDataService, EvidenceService],
+  exports: [
+    FarmDataService,
+    EvidenceService,
+    FARM_DATA_REPOSITORY,
+    EVIDENCE_REPOSITORY,
+  ],
 })
 export class FarmDataModule {}

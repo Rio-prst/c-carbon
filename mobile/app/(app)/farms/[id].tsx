@@ -1,7 +1,13 @@
 import { Link, router, useLocalSearchParams } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
 import { Linking, Pressable, View } from 'react-native';
-import { ClipboardList, Gauge, MapPin, ShieldCheck } from 'lucide-react-native';
+import {
+  ClipboardList,
+  Gauge,
+  MapPin,
+  ShieldCheck,
+  Sprout,
+} from 'lucide-react-native';
 import {
   Button,
   Card,
@@ -138,6 +144,12 @@ export default function FarmDetailScreen() {
               variant="secondary"
               icon={Gauge}
               onPress={() => router.push(`/farms/${state.farm.id}/score`)}
+            />
+            <Button
+              label="Kesiapan Karbon"
+              variant="secondary"
+              icon={Sprout}
+              onPress={() => router.push(`/farms/${state.farm.id}/readiness`)}
             />
           </View>
 

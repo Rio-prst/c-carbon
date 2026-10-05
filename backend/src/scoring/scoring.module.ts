@@ -21,6 +21,6 @@ import { FarmsModule } from '../farms/farms.module';
     },
     { provide: SCORE_REPOSITORY, useClass: ScoreRepository },
   ],
-  exports: [ScoringService],
+  exports: [ScoringService, SCORE_REPOSITORY],
 })
 export class ScoringModule {}

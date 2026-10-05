@@ -2,32 +2,42 @@ import { jest } from '@jest/globals';
 import { FarmDataService } from './farm-data.service';
 import { FarmDataRepository } from './farm-data.repository';
 import { FarmSeasonRepository } from './farm-season.repository';
+import type { FarmSeasonRecord } from './farm-data.repository.interface';
+
+type AsyncMock = jest.Mock<() => Promise<unknown>>;
+
 const farmsService = {
-  assertOwnership: jest.fn().mockResolvedValue(undefined),
+  assertOwnership: jest.fn<() => Promise<unknown>>(),
 };
 
 describe('FarmDataService', () => {
   let service: FarmDataService;
   let dataRepo: FarmDataRepository;
   let seasonRepo: FarmSeasonRepository;
-  let scoring: { recalculateFromFarmData: jest.Mock };
-  let rewards: { awardEvent: jest.Mock };
+  let scoring: { recalculateFromFarmData: AsyncMock };
+  let rewards: { awardEvent: AsyncMock };
 
-  const season = { id: 'season-1', farmId: 'farm-1', createdAt: new Date() };
+  const season: FarmSeasonRecord = {
+    id: 'season-1',
+    farmId: 'farm-1',
+    createdAt: new Date(),
+  };
 
   beforeEach(() => {
+    farmsService.assertOwnership.mockResolvedValue(undefined);
     dataRepo = new FarmDataRepository();
     seasonRepo = new FarmSeasonRepository();
     scoring = {
-      recalculateFromFarmData: jest.fn().mockResolvedValue(undefined),
+      recalculateFromFarmData: jest.fn<() => Promise<unknown>>(),
     };
-    rewards = { awardEvent: jest.fn().mockResolvedValue(undefined) };
+    rewards = { awardEvent: jest.fn<() => Promise<unknown>>() };
+    scoring.recalculateFromFarmData.mockResolvedValue(undefined);
+    rewards.awardEvent.mockResolvedValue(undefined);
 
-    jest.spyOn(seasonRepo, 'create').mockResolvedValue(season);
     jest
       .spyOn(seasonRepo, 'findById')
       .mockImplementation((id) =>
-        Promise.resolve(id === season.id ? season : undefined),
+        Promise.resolve(id === season.id ? season : null),
       );
 
     service = new FarmDataService(
@@ -49,12 +59,12 @@ describe('FarmDataService', () => {
     expect(created.farmId).toBe('farm-1');
     expect(rewards.awardEvent).toHaveBeenCalledTimes(1);
 
-    const [userId, eventType] = rewards.awardEvent.mock.calls[0] as [
+    const call = rewards.awardEvent.mock.calls[0] as unknown as [
       string,
       string,
     ];
-    expect(userId).toBe('user-1');
-    expect(eventType).toBe('FARM_DATA_SUBMISSION');
+    expect(call[0]).toBe('user-1');
+    expect(call[1]).toBe('FARM_DATA_SUBMISSION');
   });
 
   it('keeps the submission even when the reward fails', async () => {
