@@ -1,26 +1,32 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import type {
   FSSBreakdown,
   FSSInput,
   FSSResult,
   IFSSService,
 } from './fss.service.interface';
+import {
+  NORMALIZATION_PROVIDER,
+  type INormalizationProvider,
+} from './normalization.provider.interface';
 
+/**
+ * FSS weighting per PRD:
+ * productivity 20%, input efficiency 15%, water efficiency 15%,
+ * fertilizer management 10%, waste management 10%, soil conservation 10%,
+ * energy 5%, risk history 5%, data consistency 5%, low-carbon practice 5%.
+ *
+ * Scoring itself stays here; the mapping from raw readings to 0-100 lives in
+ * the injected normalization provider so the reference ranges can be replaced
+ * without touching the weighting.
+ */
 @Injectable()
 export class FSSService implements IFSSService {
-  /**
-   * Calculate FSS based on PRD weighting:
-   * - Productivity 20%
-   * - Input Efficiency 15%
-   * - Water Efficiency 15%
-   * - Fertilizer Management 10%
-   * - Waste Management 10%
-   * - Soil Conservation 10%
-   * - Energy 5%
-   * - Risk History 5%
-   * - Data Consistency 5%
-   * - Low-Carbon Practice 5%
-   */
+  constructor(
+    @Inject(NORMALIZATION_PROVIDER)
+    private readonly normalization: INormalizationProvider,
+  ) {}
+
   calculateFSS(input: FSSInput): FSSResult {
     const {
       yieldKg,
@@ -34,26 +40,34 @@ export class FSSService implements IFSSService {
       farmDataStatus,
     } = input;
 
-    // Calculate each component
-    const productivity = this.calculateProductivity(yieldKg);
-    const inputEfficiency = this.calculateInputEfficiency(
+    const productivity = this.score(yieldKg, (v) =>
+      this.normalization.productivity(v),
+    );
+    const inputEfficiency = this.scoreBoth(
       fertilizerUsage,
       pesticideUsage,
+      (f, p) => this.normalization.inputEfficiency(f, p),
     );
-    const waterEfficiency = this.calculateWaterEfficiency(waterUsage);
-    const fertilizerManagement =
-      this.calculateFertilizerManagement(fertilizerUsage);
-    const wasteManagement = this.calculateWasteManagement(
+    const waterEfficiency = this.score(waterUsage, (v) =>
+      this.normalization.waterEfficiency(v),
+    );
+    const fertilizerManagement = this.score(fertilizerUsage, (v) =>
+      this.normalization.fertilizerManagement(v),
+    );
+    const wasteManagement = this.scorePractice(
       wasteManagementPractice,
+      'waste_management',
     );
-    const soilConservation = this.calculateSoilConservation(soilPractice);
-    const energy = this.calculateEnergy(energyUsage);
+    const soilConservation = this.scorePractice(
+      soilPractice,
+      'soil_conservation',
+    );
+    const energy = this.score(energyUsage, (v) => this.normalization.energy(v));
     const riskHistory = this.calculateRiskHistory(farmDataStatus);
     const dataConsistency = this.calculateDataConsistency(input);
     const lowCarbonPracticeScore =
       this.calculateLowCarbonPractice(lowCarbonPractice);
 
-    // Weight and aggregate
     const value = Math.round(
       productivity * 0.2 +
         inputEfficiency * 0.15 +
@@ -83,71 +97,40 @@ export class FSSService implements IFSSService {
     return {
       value: Math.max(0, Math.min(100, value)),
       breakdown,
-      isProvisional: farmDataStatus !== 'VERIFIED',
+      isProvisional:
+        this.normalization.isProvisional || farmDataStatus !== 'VERIFIED',
     };
   }
 
-  // Component calculations with placeholder normalization
-
-  private calculateProductivity(yieldKg?: number): number {
-    if (yieldKg == null) return 0;
-    // Normalize: assume reference range 0-10000 kg/season
-    return Math.min(100, Math.round((yieldKg / 10000) * 100));
-  }
-
-  private calculateInputEfficiency(
-    fertilizerUsage?: number,
-    pesticideUsage?: number,
+  /** A missing reading scores 0 rather than being treated as a good value. */
+  private score(
+    value: number | undefined,
+    normalize: (value: number) => number,
   ): number {
-    if (fertilizerUsage == null && pesticideUsage == null) return 0;
-    // Lower usage = better efficiency (normalized against reference)
-    const totalInput = (fertilizerUsage || 0) + (pesticideUsage || 0);
-    return Math.min(100, Math.round((10000 / (totalInput + 1)) * 100));
+    return value == null ? 0 : normalize(value);
   }
 
-  private calculateWaterEfficiency(waterUsage?: number): number {
-    if (waterUsage == null) return 0;
-    // Lower water usage = better efficiency
-    return Math.min(100, Math.round((10000 / (waterUsage + 1)) * 100));
+  private scoreBoth(
+    first: number | undefined,
+    second: number | undefined,
+    normalize: (first: number, second: number) => number,
+  ): number {
+    return first == null && second == null
+      ? 0
+      : normalize(first ?? 0, second ?? 0);
   }
 
-  private calculateFertilizerManagement(fertilizerUsage?: number): number {
-    if (fertilizerUsage == null) return 0;
-    // Optimal range: assume 100-500 kg/ha is good
-    if (fertilizerUsage >= 100 && fertilizerUsage <= 500) return 100;
-    if (fertilizerUsage < 100) return Math.round((fertilizerUsage / 100) * 100);
-    return Math.max(0, Math.round(100 - (fertilizerUsage - 500) / 10));
-  }
-
-  private calculateWasteManagement(wasteManagementPractice?: string): number {
-    if (!wasteManagementPractice) return 0;
-    const practices: Record<string, number> = {
-      composting: 100,
-      recycling: 80,
-      incineration: 60,
-      landfill: 40,
-      none: 20,
-    };
-    return practices[wasteManagementPractice.toLowerCase()] ?? 50;
-  }
-
-  private calculateSoilConservation(soilPractice?: string): number {
-    if (!soilPractice) return 0;
-    const practices: Record<string, number> = {
-      cover_cropping: 100,
-      crop_rotation: 90,
-      no_till: 85,
-      reduced_till: 70,
-      conventional: 50,
-      none: 30,
-    };
-    return practices[soilPractice.toLowerCase()] ?? 50;
-  }
-
-  private calculateEnergy(energyUsage?: number): number {
-    if (energyUsage == null) return 0;
-    // Lower energy usage = better
-    return Math.min(100, Math.round((10000 / (energyUsage + 1)) * 100));
+  /**
+   * An unknown practice name is not silently scored as neutral, because that
+   * would let a typo look like a middling result. It scores 0 and the
+   * breakdown stays honest about not knowing the practice.
+   */
+  private scorePractice(
+    practice: string | undefined,
+    kind: 'waste_management' | 'soil_conservation',
+  ): number {
+    if (!practice) return 0;
+    return this.normalization.practiceScore(practice, kind) ?? 0;
   }
 
   private calculateRiskHistory(farmDataStatus?: string): number {

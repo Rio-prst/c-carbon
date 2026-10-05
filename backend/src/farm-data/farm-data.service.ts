@@ -1,4 +1,4 @@
-import { Inject, Injectable, NotFoundException } from '@nestjs/common';
+import { Inject, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import {
   FARM_DATA_REPOSITORY,
   FARM_SEASON_REPOSITORY,
@@ -12,9 +12,12 @@ import {
 } from './farm-data.repository.interface';
 import { FarmsService } from '../farms/farms.service';
 import { ScoringService } from '../scoring/scoring.service';
+import { RewardService } from '../rewards/reward.service';
 
 @Injectable()
 export class FarmDataService {
+  private readonly logger = new Logger(FarmDataService.name);
+
   constructor(
     @Inject(FARM_DATA_REPOSITORY)
     private readonly farmDataRepository: IFarmDataRepository,
@@ -22,6 +25,7 @@ export class FarmDataService {
     private readonly farmSeasonRepository: IFarmSeasonRepository,
     private readonly farmsService: FarmsService,
     private readonly scoringService: ScoringService,
+    private readonly rewardService: RewardService,
   ) {}
 
   /**
@@ -41,6 +45,7 @@ export class FarmDataService {
       ...data,
       farmDataStatus: data.status,
     });
+    await this.awardSubmissionReward(userId, data);
     return data;
   }
 
@@ -108,6 +113,25 @@ export class FarmDataService {
       farmDataStatus: updated.status,
     });
     return updated;
+  }
+
+  /**
+   * A reward must never cost the farmer their data submission, so a failure
+   * here is logged rather than propagated.
+   */
+  private async awardSubmissionReward(
+    userId: string,
+    data: FarmDataRecord,
+  ): Promise<void> {
+    try {
+      await this.rewardService.awardEvent(userId, 'FARM_DATA_SUBMISSION', {
+        description: `Data submission for farm ${data.farmId}`,
+      });
+    } catch (error: unknown) {
+      this.logger.warn(
+        `Could not award submission reward for user ${userId}: ${String(error)}`,
+      );
+    }
   }
 
   private async assertSeasonOwnership(

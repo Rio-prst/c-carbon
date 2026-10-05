@@ -45,29 +45,29 @@ Status:
 
 - [x] Insurance schema
 - [x] Insurance API
-- [ ] Insurance status UI
-- [ ] Pending/active/expired states
+- [x] Insurance status UI
+- [x] Pending/active/expired states
 
 ## Phase 4 — Farm Data
 
 - [x] Farm season schema
 - [x] Farm data schema
-- [x] Evidence schema/storage strategy
+- [~] Evidence schema/storage strategy (schema only, no upload storage yet)
 - [x] Submit API
 - [x] History API
-- [ ] Submit screen
-- [ ] History screen
-- [ ] Verification states
+- [x] Submit screen
+- [x] History screen
+- [~] Verification states (farmer view only, admin review not built)
 
 ## Phase 5 — Scoring
 
 - [x] FSS calculation service
-- [ ] Normalization abstraction
+- [x] Normalization abstraction
 - [x] FSS breakdown
 - [x] Provisional score
-- [ ] Verified score
+- [ ] Verified score (blocked on admin review)
 - [x] Score API
-- [ ] Score screen
+- [x] Score screen
 - [x] Unit tests
 
 ## Phase 6 — Rewards
@@ -78,6 +78,16 @@ Status:
 - [x] Rewards API
 - [x] Rewards screen
 - [x] Unit tests
+- [x] Award reward on data submission
+
+## Phase 6.5 — Admin (P0, not yet started)
+
+Required for `VERIFIED` status and non-provisional scores.
+
+- [ ] Admin data review list
+- [ ] Verify/reject action
+- [ ] Evidence review
+- [ ] Audit logging
 
 ## Phase 7 — Carbon Readiness
 
