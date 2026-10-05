@@ -80,22 +80,22 @@ Status:
 - [x] Unit tests
 - [x] Award reward on data submission
 
-## Phase 6.5 — Admin (P0, not yet started)
+## Phase 6.5 — Admin (P0)
 
 Required for `VERIFIED` status and non-provisional scores.
 
-- [ ] Admin data review list
-- [ ] Verify/reject action
-- [ ] Evidence review
-- [ ] Audit logging
+- [x] Admin data review list
+- [x] Verify/reject action
+- [~] Evidence review (count surfaced, no viewer yet)
+- [x] Audit logging
 
 ## Phase 7 — Carbon Readiness
 
-- [ ] CRS calculation service
-- [ ] CRS API
-- [ ] CRS screen
-- [ ] Eligibility explanation
-- [ ] Unit tests
+- [x] CRS calculation service
+- [x] CRS API
+- [x] CRS screen
+- [x] Eligibility explanation
+- [x] Unit tests
 
 ## Phase 8 — Carbon Project
 

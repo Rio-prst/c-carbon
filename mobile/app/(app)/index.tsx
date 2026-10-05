@@ -1,6 +1,6 @@
 import { router } from 'expo-router';
 import { Pressable, StyleSheet, View } from 'react-native';
-import { Award, MapPin } from 'lucide-react-native';
+import { Award, ClipboardCheck, MapPin } from 'lucide-react-native';
 import { Button, Card, Screen, Text } from '../../components';
 import { colors, spacing } from '../../lib/theme';
 import { useAuth } from '../../store/auth';
@@ -53,6 +53,25 @@ export default function HomeScreen() {
           </Pressable>
         </View>
 
+        {user?.role === 'ADMIN' ? (
+          <Pressable
+            onPress={() => router.push('/admin/review')}
+            style={styles.adminEntry}
+          >
+            <Card style={styles.actionCard}>
+              <ClipboardCheck size={20} color={colors.brand.forest600} />
+              <View style={styles.actionText}>
+                <Text variant="bodyMedium" color={colors.neutral.ink900}>
+                  Review Data
+                </Text>
+                <Text variant="caption" color={colors.neutral.ink500}>
+                  Verifikasi kiriman petani
+                </Text>
+              </View>
+            </Card>
+          </Pressable>
+        ) : null}
+
         <Button
           label="Log out"
           variant="secondary"
@@ -77,6 +96,10 @@ const styles = StyleSheet.create({
     alignSelf: 'stretch',
     gap: spacing.sm,
     marginTop: spacing.xl,
+  },
+  adminEntry: {
+    alignSelf: 'stretch',
+    marginTop: spacing.sm,
   },
   actionCard: {
     flexDirection: 'row',
