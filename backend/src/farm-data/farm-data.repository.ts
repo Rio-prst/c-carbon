@@ -43,8 +43,12 @@ export class FarmDataRepository implements IFarmDataRepository {
 
   findByFarmId(farmId: string): Promise<FarmDataRecord[]> {
     return Promise.resolve(
-      Array.from(this.dataMap.values()).filter((d) => d.farmId === farmId),
+      [...this.dataMap.values()].filter((data) => data.farmId === farmId),
     );
+  }
+
+  findAll(): Promise<FarmDataRecord[]> {
+    return Promise.resolve([...this.dataMap.values()]);
   }
 
   findById(id: string): Promise<FarmDataRecord | null> {

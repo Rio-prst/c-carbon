@@ -81,6 +81,9 @@ export interface IFarmSeasonRepository {
 export interface IFarmDataRepository {
   create(input: CreateFarmDataInput): Promise<FarmDataRecord>;
 
+  /** Every submission across all farms. Admin use only. */
+  findAll(): Promise<FarmDataRecord[]>;
+
   findByFarmSeasonId(farmSeasonId: string): Promise<FarmDataRecord[]>;
 
   findByFarmId(farmId: string): Promise<FarmDataRecord[]>;

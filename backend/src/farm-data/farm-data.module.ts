@@ -30,6 +30,7 @@ import { RewardModule } from '../rewards/reward.module';
     EvidenceService,
     FARM_DATA_REPOSITORY,
     EVIDENCE_REPOSITORY,
+    FARM_SEASON_REPOSITORY,
   ],
 })
 export class FarmDataModule {}

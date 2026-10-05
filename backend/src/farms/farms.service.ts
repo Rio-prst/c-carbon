@@ -113,6 +113,17 @@ export class FarmsService {
     return farm;
   }
 
+  /**
+   * Resolves a farm for admin review, without an ownership check.
+   *
+   * This deliberately bypasses `assertOwnership`, so it must only be reachable
+   * from an ADMIN-guarded controller. Kept here rather than exposing the
+   * repository so modules never reach into persistence directly.
+   */
+  async findByIdForAdmin(farmId: string): Promise<FarmRecord | null> {
+    return this.farmsRepository.findById(farmId);
+  }
+
   private generateDigitalFarmId(): string {
     const suffix = randomUUID().replace(/-/g, '').slice(0, 5).toUpperCase();
     return `${DFID_PREFIX}-${suffix}`;
