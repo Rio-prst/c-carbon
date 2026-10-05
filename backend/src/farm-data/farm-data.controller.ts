@@ -50,6 +50,7 @@ export class FarmDataController {
       farmId,
       id,
       dto.status,
+      dto.rejectionReason,
     );
   }
 

@@ -84,6 +84,7 @@ export class FarmDataService {
     farmId: string,
     id: string,
     status: FarmDataStatus,
+    rejectionReason?: string,
   ): Promise<FarmDataRecord> {
     await this.farmsService.assertOwnership(userId, farmId);
 
@@ -97,7 +98,11 @@ export class FarmDataService {
       });
     }
 
-    const updated = await this.farmDataRepository.updateStatus(id, status);
+    const updated = await this.farmDataRepository.updateStatus(
+      id,
+      status,
+      rejectionReason,
+    );
     await this.scoringService.recalculateFromFarmData(userId, farmId, {
       ...updated,
       farmDataStatus: updated.status,

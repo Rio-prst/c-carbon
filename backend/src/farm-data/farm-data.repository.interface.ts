@@ -56,6 +56,7 @@ export type FarmDataRecord = {
   energyUsage?: number;
   lowCarbonPractice: boolean;
   status: FarmDataStatus;
+  rejectionReason?: string;
   submittedAt: Date;
   createdAt: Date;
 };
@@ -86,7 +87,11 @@ export interface IFarmDataRepository {
 
   findById(id: string): Promise<FarmDataRecord | null>;
 
-  updateStatus(id: string, status: FarmDataStatus): Promise<FarmDataRecord>;
+  updateStatus(
+    id: string,
+    status: FarmDataStatus,
+    rejectionReason?: string,
+  ): Promise<FarmDataRecord>;
 }
 
 export interface IEvidenceRepository {

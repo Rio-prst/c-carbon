@@ -1,6 +1,8 @@
 export { Text } from './Text';
 export { Button } from './Button';
 export { Input } from './Input';
+export { SelectField } from './SelectField';
+export type { SelectOption } from './SelectField';
 export { Card } from './Card';
 export { Screen } from './Screen';
 export { StatusBadge } from './StatusBadge';
