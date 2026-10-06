@@ -1,7 +1,7 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { RefreshControl, StyleSheet, View } from 'react-native';
-import { FileWarning, Plus, PlusCircle } from 'lucide-react-native';
+import { Pressable, RefreshControl, StyleSheet, View } from 'react-native';
+import { FileWarning, Paperclip, Plus, PlusCircle } from 'lucide-react-native';
 import {
   Button,
   Card,
@@ -17,10 +17,11 @@ import {
   formatSubmissionDate,
   summarizeFarmData,
 } from '../../../../../lib/farm-data';
+import { evidenceTypeLabel } from '../../../../../lib/evidence';
 import { colors, spacing } from '../../../../../lib/theme';
-import { getHistory } from '../../../../../services/farm-data';
+import { getEvidence, getHistory } from '../../../../../services/farm-data';
 import { useAuth } from '../../../../../store/auth';
-import type { FarmData } from '../../../../../types/farm-data';
+import type { Evidence, FarmData } from '../../../../../types/farm-data';
 
 export default function FarmDataHistoryScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -29,6 +30,37 @@ export default function FarmDataHistoryScreen() {
   const [data, setData] = useState<FarmData[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
+
+  // Evidence is fetched only when a row is opened, so the list does not fire
+  // one request per submission on every load.
+  const [openEvidenceId, setOpenEvidenceId] = useState<string | null>(null);
+  const [evidenceByDataId, setEvidenceByDataId] = useState<
+    Record<string, Evidence[]>
+  >({});
+  const [loadingEvidenceId, setLoadingEvidenceId] = useState<string | null>(null);
+
+  const toggleEvidence = useCallback(
+    async (farmDataId: string) => {
+      if (openEvidenceId === farmDataId) {
+        setOpenEvidenceId(null);
+        return;
+      }
+
+      setOpenEvidenceId(farmDataId);
+      if (evidenceByDataId[farmDataId] != null || !token) return;
+
+      setLoadingEvidenceId(farmDataId);
+      try {
+        const result = await getEvidence(id, farmDataId, token);
+        setEvidenceByDataId((prev) => ({ ...prev, [farmDataId]: result }));
+      } catch {
+        setEvidenceByDataId((prev) => ({ ...prev, [farmDataId]: [] }));
+      } finally {
+        setLoadingEvidenceId(null);
+      }
+    },
+    [evidenceByDataId, id, openEvidenceId, token],
+  );
 
   const load = useCallback(async () => {
     if (!token) return;
@@ -83,6 +115,8 @@ export default function FarmDataHistoryScreen() {
         <ErrorState message={error} onRetry={() => void load()} />
       ) : null}
 
+      {data == null && error == null ? <HistorySkeleton /> : null}
+
       {data != null && data.length === 0 ? (
         <EmptyState
           icon={FileWarning}
@@ -128,6 +162,64 @@ export default function FarmDataHistoryScreen() {
                         'Admin belum menuliskan alasan. Hubungi admin untuk detail.'}
                     </Text>
                   </View>
+                ) : null}
+
+                <Pressable
+                  style={styles.evidenceToggle}
+                  onPress={() => void toggleEvidence(item.id)}
+                  accessibilityRole="button"
+                  accessibilityLabel="Lihat bukti dukung"
+                >
+                  <Paperclip
+                    size={16}
+                    strokeWidth={2}
+                    color={
+                      evidenceByDataId[item.id]?.length
+                        ? colors.brand.forest600
+                        : colors.neutral.ink500
+                    }
+                  />
+                  <Text variant="caption" color={colors.neutral.ink500}>
+                    {evidenceByDataId[item.id]?.length
+                      ? `${evidenceByDataId[item.id].length} bukti terlampir`
+                      : 'Lihat bukti dukung'}
+                  </Text>
+                </Pressable>
+
+                {openEvidenceId === item.id ? (
+                  loadingEvidenceId === item.id ? (
+                    <Text variant="caption" color={colors.neutral.ink500}>
+                      Memuat bukti...
+                    </Text>
+                  ) : (evidenceByDataId[item.id] ?? []).length === 0 ? (
+                    <Text variant="caption" color={colors.neutral.ink500}>
+                      Belum ada bukti terlampir. Admin memerlukan bukti untuk
+                      memverifikasi data ini.
+                    </Text>
+                  ) : (
+                    <View style={styles.evidenceList}>
+                      {(evidenceByDataId[item.id] ?? []).map((file) => (
+                        <View
+                          key={file.id}
+                          style={styles.evidenceItem}
+                        >
+                          <Text
+                            variant="bodyMedium"
+                            color={colors.neutral.ink900}
+                          >
+                            {file.fileName ?? 'Berkas bukti'}
+                          </Text>
+                          <Text
+                            variant="caption"
+                            color={colors.neutral.ink500}
+                          >
+                            {evidenceTypeLabel(file.type)} ·{' '}
+                            {formatSubmissionDate(file.uploadedAt)}
+                          </Text>
+                        </View>
+                      ))}
+                    </View>
+                  )
                 ) : null}
               </Card>
             );
@@ -193,6 +285,20 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.semantic.error,
     backgroundColor: colors.neutral.white,
+    gap: spacing.xs,
+  },
+  evidenceToggle: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    paddingVertical: spacing.sm,
+    marginTop: spacing.xs,
+  },
+  evidenceList: {
+    gap: spacing.sm,
+    paddingVertical: spacing.xs,
+  },
+  evidenceItem: {
     gap: spacing.xs,
   },
   actions: {

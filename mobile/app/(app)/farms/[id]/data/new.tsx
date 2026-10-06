@@ -1,21 +1,27 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { KeyboardAvoidingView, Platform, StyleSheet, View } from 'react-native';
+import { Alert, KeyboardAvoidingView, Platform, StyleSheet, View } from 'react-native';
 import {
   Button,
   Card,
+  EvidencePicker,
   Input,
   Screen,
   SelectField,
   Text,
 } from '../../../../../components';
+import type { PickedEvidence } from '../../../../../lib/evidence';
 import {
   SOIL_PRACTICE_OPTIONS,
   WASTE_PRACTICE_OPTIONS,
   formatSubmissionDate,
 } from '../../../../../lib/farm-data';
 import { colors, spacing } from '../../../../../lib/theme';
-import { getSeasons, submitData } from '../../../../../services/farm-data';
+import {
+  addEvidence,
+  getSeasons,
+  submitData,
+} from '../../../../../services/farm-data';
 import { useAuth } from '../../../../../store/auth';
 import type { FarmSeason } from '../../../../../types/farm-data';
 
@@ -65,6 +71,7 @@ export default function SubmitFarmDataScreen() {
   const [form, setForm] = useState<FormState>(INITIAL_FORM);
   const [errors, setErrors] = useState<FieldErrors>({});
   const [submitting, setSubmitting] = useState(false);
+  const [evidence, setEvidence] = useState<PickedEvidence[]>([]);
 
   const loadSeasons = useCallback(() => {
     if (!token) return;
@@ -135,7 +142,7 @@ export default function SubmitFarmDataScreen() {
 
     setSubmitting(true);
     try {
-      await submitData(
+      const created = await submitData(
         id,
         {
           farmSeasonId: farmSeasonId as string,
@@ -150,6 +157,32 @@ export default function SubmitFarmDataScreen() {
         },
         token,
       );
+
+      // Evidence can only be attached once the submission exists, so a failed
+      // attachment must not undo a successful submission.
+      if (evidence.length > 0) {
+        const failed = await Promise.all(
+          evidence.map((item) =>
+            addEvidence(
+              id,
+              { farmDataId: created.id, type: item.type, fileName: item.fileName },
+              token,
+            ).then(
+              () => null,
+              (err: unknown) =>
+                err instanceof Error ? err.message : 'Gagal melampirkan bukti',
+            ),
+          ),
+        ).then((results) => results.filter((item): item is string => item != null));
+
+        if (failed.length > 0) {
+          Alert.alert(
+            'Data terkirim, bukti belum lengkap',
+            `Data lahan sudah tersimpan, tetapi ${failed.length} berkas gagal dilampirkan. Buka riwayat dan lampirkan ulang.`,
+          );
+        }
+      }
+
       router.replace(`/farms/${id}/data`);
     } catch (error: unknown) {
       // The draft is intentionally kept so a transient failure loses nothing.
@@ -287,6 +320,8 @@ export default function SubmitFarmDataScreen() {
             disabled={submitting}
           />
         </View>
+
+        <EvidencePicker value={evidence} onChange={setEvidence} disabled={submitting} />
 
         {errors.form != null ? (
           <Card style={styles.errorBox}>
