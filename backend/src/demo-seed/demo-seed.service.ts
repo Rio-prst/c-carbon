@@ -1,0 +1,254 @@
+import { Inject, Injectable, Logger, OnModuleInit } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import * as bcrypt from 'bcryptjs';
+import {
+  EVIDENCE_REPOSITORY,
+  FARM_DATA_REPOSITORY,
+  FARM_SEASON_REPOSITORY,
+  type IEvidenceRepository,
+  type IFarmDataRepository,
+  type IFarmSeasonRepository,
+} from '../farm-data/farm-data.repository.interface';
+import { FarmDataStatus } from '../farm-data/farm-data.repository.interface';
+import { INSURANCE_REPOSITORY } from '../insurance/insurance.repository';
+import type { IInsuranceRepository } from '../insurance/insurance.repository';
+import { FarmsService } from '../farms/farms.service';
+import { RewardService } from '../rewards/reward.service';
+import { ScoringService } from '../scoring/scoring.service';
+import {
+  USERS_REPOSITORY,
+  type IUsersRepository,
+  type PublicUser,
+} from '../users/users.repository.interface';
+
+const DEMO_PASSWORD = 'password123';
+const BCRYPT_ROUNDS = 10;
+
+/**
+ * Deterministic demo fixtures, so a competition demo never depends on
+ * hand-typed data or on data that survived from an earlier run.
+ *
+ * Only users and farms live in Postgres today, so this runs on boot rather
+ * than as a `prisma db seed`. That is a stopgap: when farm data, scores,
+ * insurance and rewards move to Prisma this should become a real seed
+ * script and a fixture set, not startup code.
+ */
+@Injectable()
+export class DemoSeedService implements OnModuleInit {
+  private readonly logger = new Logger(DemoSeedService.name);
+
+  constructor(
+    @Inject(USERS_REPOSITORY)
+    private readonly usersRepository: IUsersRepository,
+    private readonly farmsService: FarmsService,
+    @Inject(FARM_SEASON_REPOSITORY)
+    private readonly seasonRepository: IFarmSeasonRepository,
+    @Inject(FARM_DATA_REPOSITORY)
+    private readonly farmDataRepository: IFarmDataRepository,
+    @Inject(EVIDENCE_REPOSITORY)
+    private readonly evidenceRepository: IEvidenceRepository,
+    @Inject(INSURANCE_REPOSITORY)
+    private readonly insuranceRepository: IInsuranceRepository,
+    private readonly scoringService: ScoringService,
+    private readonly rewardService: RewardService,
+    private readonly configService: ConfigService,
+  ) {}
+
+  async onModuleInit(): Promise<void> {
+    if (this.configService.get<string>('DEMO_SEED') !== 'true') {
+      return;
+    }
+
+    try {
+      await this.seed();
+    } catch (error: unknown) {
+      // A fixture failure must not take the API down, or the demo has no
+      // fallback to a blank but working state.
+      this.logger.error(`Demo seed failed: ${describe(error)}`);
+    }
+  }
+
+  private async seed(): Promise<void> {
+    const farmerA = await this.ensureUser(
+      'Petani Satu',
+      'farmer1@demo.test',
+      'FARMER',
+    );
+    const farmerB = await this.ensureUser(
+      'Petani Dua',
+      'farmer2@demo.test',
+      'FARMER',
+    );
+    await this.ensureUser('Admin Demo', 'admin@demo.test', 'ADMIN');
+    await this.ensureUser('Korporat Demo', 'corporate@demo.test', 'CORPORATE');
+
+    const farmA1 = await this.ensureFarm(farmerA.id, {
+      name: 'Lahan Padi Sawah',
+      lat: -6.9,
+      lng: 107.6,
+      landAreaHa: 2.5,
+      commodity: 'Padi',
+    });
+    const farmA2 = await this.ensureFarm(farmerA.id, {
+      name: 'Lahan Kopi',
+      lat: -6.85,
+      lng: 107.65,
+      landAreaHa: 1.8,
+      commodity: 'Kopi',
+    });
+    const farmB1 = await this.ensureFarm(farmerB.id, {
+      name: 'Lahan Jagung',
+      lat: -6.95,
+      lng: 107.55,
+      landAreaHa: 3.2,
+      commodity: 'Jagung',
+    });
+
+    await this.insuranceRepository.create({
+      farmId: farmA1.id,
+      partner: 'PT Asuransi Tani',
+      status: 'ACTIVE',
+    });
+    await this.insuranceRepository.create({
+      farmId: farmA2.id,
+      partner: 'PT Asuransi Tani',
+      status: 'PENDING',
+    });
+    await this.insuranceRepository.create({
+      farmId: farmB1.id,
+      partner: 'PT Sejahtera Tani',
+      status: 'EXPIRED',
+    });
+
+    // Farmer A already has a verified season, so the demo shows a populated
+    // score and a high readiness instead of empty states everywhere.
+    const seasonA = await this.ensureSeason(farmA1.id, '2025/2026-I');
+    if (
+      (await this.farmDataRepository.findByFarmSeasonId(seasonA.id)).length ===
+      0
+    ) {
+      const data = await this.farmDataRepository.create({
+        farmId: farmA1.id,
+        farmSeasonId: seasonA.id,
+        yieldKg: 4200,
+        waterUsage: 900,
+        fertilizerUsage: 180,
+        pesticideUsage: 12,
+        wasteManagementPractice: 'composting',
+        soilPractice: 'cover_cropping',
+        energyUsage: 220,
+        lowCarbonPractice: true,
+      });
+
+      await this.evidenceRepository.create({
+        farmDataId: data.id,
+        type: 'HARVEST_REPORT',
+        fileName: 'laporan-panen.pdf',
+        url: 'https://example.test/evidence/harvest-report.pdf',
+      });
+      await this.farmDataRepository.updateStatus(
+        data.id,
+        'VERIFIED' satisfies FarmDataStatus,
+      );
+      await this.scoringService.recalculateFromFarmData(farmerA.id, farmA1.id, {
+        ...data,
+        farmDataStatus: 'VERIFIED',
+      });
+      await this.rewardService
+        .awardEvent(farmerA.id, 'FARM_DATA_SUBMISSION', {
+          description: 'Data awal untuk demo',
+        })
+        .catch((error: unknown) => {
+          this.logger.warn(`Reward seed skipped: ${describe(error)}`);
+        });
+    }
+
+    // Farmer B is left self-reported on purpose: this is the item the admin
+    // review screen starts with during the demo.
+    const seasonB = await this.ensureSeason(farmB1.id, '2025/2026-II');
+    if (
+      (await this.farmDataRepository.findByFarmSeasonId(seasonB.id)).length ===
+      0
+    ) {
+      const data = await this.farmDataRepository.create({
+        farmId: farmB1.id,
+        farmSeasonId: seasonB.id,
+        yieldKg: 3100,
+        waterUsage: 1400,
+        fertilizerUsage: 320,
+        pesticideUsage: 40,
+        wasteManagementPractice: 'landfill',
+        soilPractice: 'conventional',
+        energyUsage: 480,
+        lowCarbonPractice: false,
+      });
+      await this.scoringService.recalculateFromFarmData(farmerB.id, farmB1.id, {
+        ...data,
+        farmDataStatus: data.status,
+      });
+    }
+
+    this.logger.log(
+      'Demo data ready. Login password for all demo users: password123',
+    );
+  }
+
+  /** Reuses the existing row when the email is already registered. */
+  private async ensureUser(
+    name: string,
+    email: string,
+    role: 'FARMER' | 'ADMIN' | 'CORPORATE',
+  ): Promise<PublicUser> {
+    const existing = await this.usersRepository.findByEmail(email);
+    if (existing != null) {
+      return existing;
+    }
+
+    return this.usersRepository.create({
+      name,
+      email,
+      role,
+      passwordHash: await bcrypt.hash(DEMO_PASSWORD, BCRYPT_ROUNDS),
+    });
+  }
+
+  /** Matches on name, since createFarm always generates a new DFID. */
+  private async ensureFarm(
+    userId: string,
+    input: {
+      name: string;
+      lat: number;
+      lng: number;
+      landAreaHa: number;
+      commodity: string;
+    },
+  ) {
+    const owned = await this.farmsService.listFarms(userId);
+    const match = owned.find((farm) => farm.name === input.name);
+    if (match != null) {
+      return match;
+    }
+
+    return this.farmsService.createFarm(userId, input);
+  }
+
+  private async ensureSeason(farmId: string, label: string) {
+    const existing = await this.seasonRepository.findByFarmId(farmId);
+    const match = existing.find((season) => season.seasonLabel === label);
+    if (match != null) {
+      return match;
+    }
+
+    return this.seasonRepository.create({
+      farmId,
+      seasonLabel: label,
+      sequenceNumber: existing.length + 1,
+      startDate: new Date('2025-10-01'),
+      endDate: new Date('2026-03-31'),
+    });
+  }
+}
+
+function describe(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
+}

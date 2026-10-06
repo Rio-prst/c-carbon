@@ -12,6 +12,7 @@ import { AdminModule } from './admin/admin.module';
 import { CRSModule } from './crs/crs.module';
 import { RewardModule } from './rewards/reward.module';
 import { FarmDataModule } from './farm-data/farm-data.module';
+import { DemoSeedModule } from './demo-seed/demo-seed.module';
 import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
 import { RolesGuard } from './auth/guards/roles.guard';
 import { ApiErrorFilter } from './common/api-error.filter';
@@ -29,6 +30,7 @@ import { PrismaModule } from './prisma/prisma.module';
     AdminModule,
     CRSModule,
     RewardModule,
+    DemoSeedModule,
   ],
   controllers: [AppController],
   providers: [
