@@ -13,9 +13,9 @@ const farmsService = {
     jest.fn<(userId: string, farmId: string) => Promise<unknown>>(),
 };
 
-function seed(): FarmDataRepository {
+async function seed(): Promise<FarmDataRepository> {
   const repository = new FarmDataRepository();
-  repository.create({
+  await repository.create({
     farmId: FARM_ID,
     farmSeasonId: 'season-1',
     yieldKg: 100,
@@ -28,8 +28,8 @@ describe('EvidenceService', () => {
   let evidenceRepository: EvidenceRepository;
   let service: EvidenceService;
 
-  beforeEach(() => {
-    dataRepository = seed();
+  beforeEach(async () => {
+    dataRepository = await seed();
     evidenceRepository = new EvidenceRepository();
     farmsService.assertOwnership.mockReset();
     farmsService.assertOwnership.mockResolvedValue(undefined);
