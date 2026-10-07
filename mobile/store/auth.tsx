@@ -1,4 +1,4 @@
-import * as SecureStore from 'expo-secure-store';
+import * as tokenStorage from '../lib/token-storage';
 import {
   createContext,
   useCallback,
@@ -40,7 +40,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     async function restore() {
       try {
-        const storedToken = await SecureStore.getItemAsync(TOKEN_KEY);
+        const storedToken = await tokenStorage.getToken(TOKEN_KEY);
 
         if (!storedToken) {
           if (!cancelled) {
@@ -57,7 +57,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setStatus('authenticated');
         }
       } catch {
-        await SecureStore.deleteItemAsync(TOKEN_KEY);
+        await tokenStorage.deleteToken(TOKEN_KEY);
 
         if (!cancelled) {
           setToken(null);
@@ -76,7 +76,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const applySession = useCallback(
     async (nextToken: string, nextUser: AuthUser) => {
-      await SecureStore.setItemAsync(TOKEN_KEY, nextToken);
+      await tokenStorage.setToken(TOKEN_KEY, nextToken);
       setToken(nextToken);
       setUser(nextUser);
       setStatus('authenticated');
@@ -105,7 +105,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   );
 
   const signOut = useCallback(async () => {
-    await SecureStore.deleteItemAsync(TOKEN_KEY);
+    await tokenStorage.deleteToken(TOKEN_KEY);
     setToken(null);
     setUser(null);
     setStatus('unauthenticated');
