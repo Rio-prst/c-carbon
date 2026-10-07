@@ -8,7 +8,8 @@ import { REWARD_REPOSITORY } from './reward.repository.interface';
   controllers: [RewardController],
   providers: [
     RewardService,
-    RewardRepository,
+    // Registered under the token only: a second registration under the class
+    // token would build a second repository instance with its own state.
     {
       provide: REWARD_REPOSITORY,
       useClass: RewardRepository,

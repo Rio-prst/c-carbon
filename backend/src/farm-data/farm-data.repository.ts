@@ -43,20 +43,32 @@ export class FarmDataRepository implements IFarmDataRepository {
 
   findByFarmId(farmId: string): Promise<FarmDataRecord[]> {
     return Promise.resolve(
-      Array.from(this.dataMap.values()).filter((d) => d.farmId === farmId),
+      [...this.dataMap.values()].filter((data) => data.farmId === farmId),
     );
+  }
+
+  findAll(): Promise<FarmDataRecord[]> {
+    return Promise.resolve([...this.dataMap.values()]);
   }
 
   findById(id: string): Promise<FarmDataRecord | null> {
     return Promise.resolve(this.dataMap.get(id) ?? null);
   }
 
-  updateStatus(id: string, status: FarmDataStatus): Promise<FarmDataRecord> {
+  updateStatus(
+    id: string,
+    status: FarmDataStatus,
+    rejectionReason?: string,
+  ): Promise<FarmDataRecord> {
     const data = this.dataMap.get(id);
     if (!data) {
       throw new Error(`Farm data ${id} not found`);
     }
-    const updated: FarmDataRecord = { ...data, status };
+    const updated: FarmDataRecord = {
+      ...data,
+      status,
+      rejectionReason: status === 'REJECTED' ? rejectionReason : undefined,
+    };
     this.dataMap.set(id, updated);
     return Promise.resolve(updated);
   }

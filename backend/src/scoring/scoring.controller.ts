@@ -11,6 +11,6 @@ export class ScoringController {
   @Get()
   @Roles('FARMER', 'ADMIN')
   getScore(@Param('farmId') farmId: string, @CurrentUser() user: JwtPayload) {
-    return this.scoringService.getScore(user.sub, farmId);
+    return this.scoringService.getScore(user, farmId);
   }
 }

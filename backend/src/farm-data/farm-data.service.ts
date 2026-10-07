@@ -1,4 +1,4 @@
-import { Inject, Injectable, NotFoundException } from '@nestjs/common';
+import { Inject, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import {
   FARM_DATA_REPOSITORY,
   FARM_SEASON_REPOSITORY,
@@ -12,9 +12,13 @@ import {
 } from './farm-data.repository.interface';
 import { FarmsService } from '../farms/farms.service';
 import { ScoringService } from '../scoring/scoring.service';
+import { RewardService } from '../rewards/reward.service';
+import type { JwtPayload } from '../auth/types/jwt-payload';
 
 @Injectable()
 export class FarmDataService {
+  private readonly logger = new Logger(FarmDataService.name);
+
   constructor(
     @Inject(FARM_DATA_REPOSITORY)
     private readonly farmDataRepository: IFarmDataRepository,
@@ -22,6 +26,7 @@ export class FarmDataService {
     private readonly farmSeasonRepository: IFarmSeasonRepository,
     private readonly farmsService: FarmsService,
     private readonly scoringService: ScoringService,
+    private readonly rewardService: RewardService,
   ) {}
 
   /**
@@ -29,63 +34,67 @@ export class FarmDataService {
    * Ownership of the farm and the season is enforced here, not in the UI.
    */
   async createData(
-    userId: string,
+    user: JwtPayload,
     farmId: string,
     input: Omit<CreateFarmDataInput, 'farmId'>,
   ): Promise<FarmDataRecord> {
-    await this.farmsService.assertOwnership(userId, farmId);
+    const farm = await this.farmsService.resolveAccess(user, farmId);
     await this.assertSeasonOwnership(farmId, input.farmSeasonId);
 
     const data = await this.farmDataRepository.create({ ...input, farmId });
-    await this.scoringService.recalculateFromFarmData(userId, farmId, {
+    // Score and reward always follow the farm owner, never the requester. An
+    // admin submitting on a farmer's behalf must not collect their points.
+    await this.scoringService.recalculateFromFarmData(farm.userId, farmId, {
       ...data,
       farmDataStatus: data.status,
     });
+    await this.awardSubmissionReward(farm.userId, data);
     return data;
   }
 
   async getDataByFarmId(
-    userId: string,
+    user: JwtPayload,
     farmId: string,
   ): Promise<FarmDataRecord[]> {
-    await this.farmsService.assertOwnership(userId, farmId);
+    await this.farmsService.resolveAccess(user, farmId);
     return this.farmDataRepository.findByFarmId(farmId);
   }
 
   async getDataByFarmSeasonId(
-    userId: string,
+    user: JwtPayload,
     farmId: string,
     farmSeasonId: string,
   ): Promise<FarmDataRecord[]> {
-    await this.farmsService.assertOwnership(userId, farmId);
+    await this.farmsService.resolveAccess(user, farmId);
     await this.assertSeasonOwnership(farmId, farmSeasonId);
     return this.farmDataRepository.findByFarmSeasonId(farmSeasonId);
   }
 
   async createSeason(
-    userId: string,
+    user: JwtPayload,
     farmId: string,
     input: Omit<CreateFarmSeasonInput, 'farmId'>,
   ): Promise<FarmSeasonRecord> {
-    await this.farmsService.assertOwnership(userId, farmId);
+    await this.farmsService.resolveAccess(user, farmId);
     return this.farmSeasonRepository.create({ ...input, farmId });
   }
 
   async getSeasonsByFarmId(
-    userId: string,
+    user: JwtPayload,
     farmId: string,
   ): Promise<FarmSeasonRecord[]> {
-    await this.farmsService.assertOwnership(userId, farmId);
+    await this.farmsService.resolveAccess(user, farmId);
     return this.farmSeasonRepository.findByFarmId(farmId);
   }
 
   async updateDataStatus(
-    userId: string,
+    user: JwtPayload,
     farmId: string,
     id: string,
     status: FarmDataStatus,
+    rejectionReason?: string,
   ): Promise<FarmDataRecord> {
-    await this.farmsService.assertOwnership(userId, farmId);
+    const farm = await this.farmsService.resolveAccess(user, farmId);
 
     const data = await this.farmDataRepository.findById(id);
     if (!data || data.farmId !== farmId) {
@@ -97,12 +106,35 @@ export class FarmDataService {
       });
     }
 
-    const updated = await this.farmDataRepository.updateStatus(id, status);
-    await this.scoringService.recalculateFromFarmData(userId, farmId, {
+    const updated = await this.farmDataRepository.updateStatus(
+      id,
+      status,
+      rejectionReason,
+    );
+    await this.scoringService.recalculateFromFarmData(farm.userId, farmId, {
       ...updated,
       farmDataStatus: updated.status,
     });
     return updated;
+  }
+
+  /**
+   * A reward must never cost the farmer their data submission, so a failure
+   * here is logged rather than propagated.
+   */
+  private async awardSubmissionReward(
+    userId: string,
+    data: FarmDataRecord,
+  ): Promise<void> {
+    try {
+      await this.rewardService.awardEvent(userId, 'FARM_DATA_SUBMISSION', {
+        description: `Data submission for farm ${data.farmId}`,
+      });
+    } catch (error: unknown) {
+      this.logger.warn(
+        `Could not award submission reward for user ${userId}: ${String(error)}`,
+      );
+    }
   }
 
   private async assertSeasonOwnership(

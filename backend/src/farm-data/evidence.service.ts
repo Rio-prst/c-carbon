@@ -10,6 +10,7 @@ import {
   type IFarmDataRepository,
 } from './farm-data.repository.interface';
 import { FarmsService } from '../farms/farms.service';
+import type { JwtPayload } from '../auth/types/jwt-payload';
 
 @Injectable()
 export class EvidenceService {
@@ -22,21 +23,21 @@ export class EvidenceService {
   ) {}
 
   async uploadEvidence(
-    userId: string,
+    user: JwtPayload,
     farmId: string,
     input: CreateEvidenceInput,
   ): Promise<EvidenceRecord> {
-    await this.farmsService.assertOwnership(userId, farmId);
+    await this.farmsService.resolveAccess(user, farmId);
     await this.assertFarmDataOwnership(farmId, input.farmDataId);
     return this.evidenceRepository.create(input);
   }
 
   async getEvidenceByFarmDataId(
-    userId: string,
+    user: JwtPayload,
     farmId: string,
     farmDataId: string,
   ): Promise<EvidenceRecord[]> {
-    await this.farmsService.assertOwnership(userId, farmId);
+    await this.farmsService.resolveAccess(user, farmId);
     await this.assertFarmDataOwnership(farmId, farmDataId);
     return this.evidenceRepository.findByFarmDataId(farmDataId);
   }

@@ -13,9 +13,10 @@ import {
 } from './farm-data.repository.interface';
 import { FarmsModule } from '../farms/farms.module';
 import { ScoringModule } from '../scoring/scoring.module';
+import { RewardModule } from '../rewards/reward.module';
 
 @Module({
-  imports: [FarmsModule, ScoringModule],
+  imports: [FarmsModule, ScoringModule, RewardModule],
   controllers: [FarmDataController, EvidenceController],
   providers: [
     FarmDataService,
@@ -24,6 +25,12 @@ import { ScoringModule } from '../scoring/scoring.module';
     EvidenceService,
     { provide: EVIDENCE_REPOSITORY, useClass: EvidenceRepository },
   ],
-  exports: [FarmDataService, EvidenceService],
+  exports: [
+    FarmDataService,
+    EvidenceService,
+    FARM_DATA_REPOSITORY,
+    EVIDENCE_REPOSITORY,
+    FARM_SEASON_REPOSITORY,
+  ],
 })
 export class FarmDataModule {}

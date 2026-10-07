@@ -12,6 +12,7 @@ import {
   type IFarmsRepository,
 } from './farms.repository.interface';
 import { CreateFarmDto } from './dto/create-farm.dto';
+import type { JwtPayload } from '../auth/types/jwt-payload';
 
 const DFID_PREFIX = 'CF';
 /** Maximum attempts to generate a unique Digital Farm ID before giving up. */
@@ -102,15 +103,51 @@ export class FarmsService {
     const farm = await this.farmsRepository.findById(farmId);
 
     if (!farm || farm.userId !== userId) {
-      throw new NotFoundException({
-        statusCode: 404,
-        code: 'FARM_NOT_FOUND',
-        message: 'Farm not found',
-        details: {},
-      });
+      throw this.farmNotFound();
     }
 
     return farm;
+  }
+
+  /**
+   * Resolves a farm for a request the role guard has already authorised.
+   *
+   * Admin has to reach other farmers' farms for data review and carbon
+   * eligibility, but `assertOwnership` deliberately rejects everyone but the
+   * owner. Deciding the bypass here keeps it from being re-derived at each call
+   * site, and keeps the ownership check for farmers so a farm id still cannot be
+   * probed to discover whether it exists.
+   */
+  async resolveAccess(user: JwtPayload, farmId: string): Promise<FarmRecord> {
+    if (user.role === 'ADMIN') {
+      const farm = await this.findByIdForAdmin(farmId);
+      if (!farm) {
+        throw this.farmNotFound();
+      }
+      return farm;
+    }
+
+    return this.assertOwnership(user.sub, farmId);
+  }
+
+  private farmNotFound(): NotFoundException {
+    return new NotFoundException({
+      statusCode: 404,
+      code: 'FARM_NOT_FOUND',
+      message: 'Farm not found',
+      details: {},
+    });
+  }
+
+  /**
+   * Resolves a farm for admin review, without an ownership check.
+   *
+   * This deliberately bypasses `assertOwnership`, so it must only be reachable
+   * from an ADMIN-guarded controller. Kept here rather than exposing the
+   * repository so modules never reach into persistence directly.
+   */
+  async findByIdForAdmin(farmId: string): Promise<FarmRecord | null> {
+    return this.farmsRepository.findById(farmId);
   }
 
   private generateDigitalFarmId(): string {

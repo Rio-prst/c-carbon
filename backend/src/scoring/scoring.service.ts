@@ -9,12 +9,28 @@ import {
   SCORE_REPOSITORY,
   type IScoreRepository,
 } from './score.repository.interface';
+import {
+  NORMALIZATION_PROVIDER,
+  type INormalizationProvider,
+  type ReferenceRange,
+} from './normalization.provider.interface';
 import { FarmsService } from '../farms/farms.service';
+import type { JwtPayload } from '../auth/types/jwt-payload';
 
 export type FarmScoreResponse = {
   fss_value: number;
   is_provisional: boolean;
   breakdown: Record<string, number>;
+  /**
+   * Why the score is provisional, so the farmer sees the reason rather than a
+   * bare flag. Absent once the score is final.
+   */
+  provisional_reason?: string;
+  /**
+   * The reference ranges behind the score, so the UI can disclose that they
+   * are placeholders pending commodity-specific sources.
+   */
+  reference_ranges?: ReferenceRange[];
 };
 
 @Injectable()
@@ -24,6 +40,8 @@ export class ScoringService {
     private readonly fssService: IFSSService,
     @Inject(SCORE_REPOSITORY)
     private readonly scoreRepository: IScoreRepository,
+    @Inject(NORMALIZATION_PROVIDER)
+    private readonly normalization: INormalizationProvider,
     private readonly farmsService: FarmsService,
   ) {}
 
@@ -47,14 +65,14 @@ export class ScoringService {
       isProvisional: result.isProvisional,
     });
 
-    return this.serializeScore(result);
+    return this.serializeScore(result, result.isProvisional);
   }
 
   async getScore(
-    userId: string,
+    user: JwtPayload,
     farmId: string,
   ): Promise<FarmScoreResponse | null> {
-    await this.farmsService.assertOwnership(userId, farmId);
+    await this.farmsService.resolveAccess(user, farmId);
 
     const score = await this.scoreRepository.findByFarmId(farmId, 'FSS');
     if (!score) return null;
@@ -66,11 +84,27 @@ export class ScoringService {
     });
   }
 
-  private serializeScore(result: FSSResult): FarmScoreResponse {
-    return {
+  private serializeScore(
+    result: FSSResult,
+    forceProvisional = false,
+  ): FarmScoreResponse {
+    const isProvisional = result.isProvisional || forceProvisional;
+    const response: FarmScoreResponse = {
       fss_value: result.value,
-      is_provisional: result.isProvisional,
+      is_provisional: isProvisional,
       breakdown: { ...result.breakdown },
     };
+
+    if (isProvisional) {
+      response.provisional_reason = this.normalization.isProvisional
+        ? 'Reference range belum final, skor bersifat sementara'
+        : 'Data belum diverifikasi admin, skor bersifat sementara';
+    }
+
+    if (this.normalization.isProvisional) {
+      response.reference_ranges = this.normalization.referenceRanges();
+    }
+
+    return response;
   }
 }

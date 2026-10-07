@@ -1,7 +1,13 @@
 import { Link, router, useLocalSearchParams } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
 import { Linking, Pressable, View } from 'react-native';
-import { MapPin } from 'lucide-react-native';
+import {
+  ClipboardList,
+  Gauge,
+  MapPin,
+  ShieldCheck,
+  Sprout,
+} from 'lucide-react-native';
 import {
   Button,
   Card,
@@ -120,6 +126,33 @@ export default function FarmDetailScreen() {
             </Text>
           </Card>
 
+          <View style={styles.links}>
+            <Button
+              label="Asuransi"
+              variant="secondary"
+              icon={ShieldCheck}
+              onPress={() => router.push(`/farms/${state.farm.id}/insurance`)}
+            />
+            <Button
+              label="Data Lahan"
+              variant="secondary"
+              icon={ClipboardList}
+              onPress={() => router.push(`/farms/${state.farm.id}/data`)}
+            />
+            <Button
+              label="Skor Lahan"
+              variant="secondary"
+              icon={Gauge}
+              onPress={() => router.push(`/farms/${state.farm.id}/score`)}
+            />
+            <Button
+              label="Kesiapan Karbon"
+              variant="secondary"
+              icon={Sprout}
+              onPress={() => router.push(`/farms/${state.farm.id}/readiness`)}
+            />
+          </View>
+
           <View style={styles.actions}>
             <Button
               label="Buka Lokasi"
@@ -190,6 +223,10 @@ const styles = {
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingVertical: spacing.xs,
+  },
+  links: {
+    gap: spacing.md,
+    marginTop: spacing.lg,
   },
   actions: {
     gap: spacing.md,

@@ -26,66 +26,76 @@ Status:
 - [x] Login API
 - [x] JWT strategy
 - [x] Role guard
-- [ ] Secure mobile token storage
-- [ ] Login screen
-- [ ] Register screen
-- [ ] Auth redirect
+- [x] Secure mobile token storage
+- [x] Login screen
+- [x] Register screen
+- [x] Auth redirect
 
 ## Phase 2 — Farm
 
-- [ ] Farm schema
-- [ ] Farm API
-- [ ] Ownership authorization
-- [ ] Farm List
-- [ ] Farm Detail
-- [ ] Register Farm
-- [ ] Digital Farm ID generation
+- [x] Farm schema
+- [x] Farm API
+- [x] Ownership authorization
+- [x] Farm List
+- [x] Farm Detail
+- [x] Register Farm
+- [x] Digital Farm ID generation
 
 ## Phase 3 — Insurance
 
-- [ ] Insurance schema
-- [ ] Insurance API
-- [ ] Insurance status UI
-- [ ] Pending/active/expired states
+- [x] Insurance schema
+- [x] Insurance API
+- [x] Insurance status UI
+- [x] Pending/active/expired states
 
 ## Phase 4 — Farm Data
 
-- [ ] Farm season schema
-- [ ] Farm data schema
-- [ ] Evidence schema/storage strategy
-- [ ] Submit API
-- [ ] History API
-- [ ] Submit screen
-- [ ] History screen
-- [ ] Verification states
+- [x] Farm season schema
+- [x] Farm data schema
+- [~] Evidence schema/storage strategy (schema only, no upload storage yet)
+- [x] Submit API
+- [x] History API
+- [x] Submit screen
+- [x] History screen
+- [~] Verification states (farmer view only, admin review not built)
 
 ## Phase 5 — Scoring
 
-- [ ] FSS calculation service
-- [ ] Normalization abstraction
-- [ ] FSS breakdown
-- [ ] Provisional score
-- [ ] Verified score
-- [ ] Score API
-- [ ] Score screen
-- [ ] Unit tests
+- [x] FSS calculation service
+- [x] Normalization abstraction
+- [x] FSS breakdown
+- [x] Provisional score
+- [ ] Verified score (blocked on admin review)
+- [x] Score API
+- [x] Score screen
+- [x] Unit tests
 
 ## Phase 6 — Rewards
 
-- [ ] Reward event service
-- [ ] Tier calculation
-- [ ] Reward persistence
-- [ ] Rewards API
-- [ ] Rewards screen
-- [ ] Unit tests
+- [x] Reward event service
+- [x] Tier calculation
+- [x] Reward persistence
+- [x] Rewards API
+- [x] Rewards screen
+- [x] Unit tests
+- [x] Award reward on data submission
+
+## Phase 6.5 — Admin (P0)
+
+Required for `VERIFIED` status and non-provisional scores.
+
+- [x] Admin data review list
+- [x] Verify/reject action
+- [~] Evidence review (count surfaced, no viewer yet)
+- [x] Audit logging
 
 ## Phase 7 — Carbon Readiness
 
-- [ ] CRS calculation service
-- [ ] CRS API
-- [ ] CRS screen
-- [ ] Eligibility explanation
-- [ ] Unit tests
+- [x] CRS calculation service
+- [x] CRS API
+- [x] CRS screen
+- [x] Eligibility explanation
+- [x] Unit tests
 
 ## Phase 8 — Carbon Project
 

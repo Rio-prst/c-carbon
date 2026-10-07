@@ -30,26 +30,91 @@ model User {
   createdAt    DateTime @default(now()) @map("created_at")
   updatedAt    DateTime @updatedAt @map("updated_at")
 
-  @@map("users")
-
   farms Farm[]
+
+  @@map("users")
 }
 
 model Farm {
-  id             String     @id @default(uuid())
-  userId         String     @map("user_id")
-  digitalFarmId  String     @unique @map("digital_farm_id")
-  name           String
-  lat            Decimal    @db.Decimal(10, 7)
-  lng            Decimal    @db.Decimal(10, 7)
-  landAreaHa     Decimal    @db.Decimal(12, 4) @map("land_area_ha")
-  commodity      String
-  status         FarmStatus @default(REGISTERED)
-  createdAt      DateTime   @default(now()) @map("created_at")
-  updatedAt      DateTime   @updatedAt @map("updated_at")
+  id            String     @id @default(uuid())
+  userId        String     @map("user_id")
+  digitalFarmId String     @unique @map("digital_farm_id")
+  name          String
+  lat           Decimal    @db.Decimal(10, 7)
+  lng           Decimal    @db.Decimal(10, 7)
+  landAreaHa    Decimal    @map("land_area_ha") @db.Decimal(12, 4)
+  commodity     String
+  status        FarmStatus @default(REGISTERED)
+  createdAt     DateTime   @default(now()) @map("created_at")
+  updatedAt     DateTime   @updatedAt @map("updated_at")
 
-  user User @relation(fields: [userId], references: [id])
+  user    User         @relation(fields: [userId], references: [id])
+  seasons FarmSeason[]
+  data    FarmData[]
 
   @@index([userId])
   @@map("farms")
+}
+
+model FarmSeason {
+  id             String    @id @default(uuid())
+  farmId         String    @map("farm_id")
+  seasonLabel    String?   @map("season_label") @db.VarChar(50)
+  startDate      DateTime? @map("start_date") @db.Date
+  endDate        DateTime? @map("end_date") @db.Date
+  sequenceNumber Int?      @map("sequence_number")
+  createdAt      DateTime  @default(now()) @map("created_at")
+
+  farm Farm       @relation(fields: [farmId], references: [id], onDelete: Cascade)
+  data FarmData[]
+
+  @@index([farmId])
+  @@map("farm_seasons")
+}
+
+enum FarmDataStatus {
+  SELF_REPORTED
+  REVIEW
+  VERIFIED
+  REJECTED
+}
+
+model FarmData {
+  id                      String         @id @default(uuid())
+  farmId                  String         @map("farm_id")
+  farmSeasonId            String         @map("farm_season_id")
+  yieldKg                 Decimal?       @map("yield_kg") @db.Decimal(10, 2)
+  waterUsage              Decimal?       @map("water_usage") @db.Decimal(10, 2)
+  fertilizerUsage         Decimal?       @map("fertilizer_usage") @db.Decimal(10, 2)
+  pesticideUsage          Decimal?       @map("pesticide_usage") @db.Decimal(10, 2)
+  wasteManagementPractice String?        @map("waste_management_practice") @db.VarChar(100)
+  soilPractice            String?        @map("soil_practice") @db.VarChar(100)
+  energyUsage             Decimal?       @map("energy_usage") @db.Decimal(10, 2)
+  lowCarbonPractice       Boolean        @default(false) @map("low_carbon_practice")
+  status                  FarmDataStatus @default(SELF_REPORTED)
+  rejectionReason         String?        @map("rejection_reason")
+  submittedAt             DateTime?      @map("submitted_at")
+  createdAt               DateTime       @default(now()) @map("created_at")
+
+  farm       Farm       @relation(fields: [farmId], references: [id], onDelete: Cascade)
+  farmSeason FarmSeason @relation(fields: [farmSeasonId], references: [id], onDelete: Cascade)
+  evidence   Evidence[]
+
+  @@index([farmId])
+  @@index([farmSeasonId])
+  @@map("farm_data")
+}
+
+model Evidence {
+  id         String   @id @default(uuid())
+  farmDataId String   @map("farm_data_id")
+  type       String?  @db.VarChar(20)
+  url        String?
+  fileName   String?  @map("file_name") @db.VarChar(255)
+  uploadedAt DateTime @default(now()) @map("uploaded_at")
+
+  farmData FarmData @relation(fields: [farmDataId], references: [id], onDelete: Cascade)
+
+  @@index([farmDataId])
+  @@map("evidence")
 }

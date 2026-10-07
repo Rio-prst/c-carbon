@@ -56,6 +56,7 @@ export type FarmDataRecord = {
   energyUsage?: number;
   lowCarbonPractice: boolean;
   status: FarmDataStatus;
+  rejectionReason?: string;
   submittedAt: Date;
   createdAt: Date;
 };
@@ -80,13 +81,20 @@ export interface IFarmSeasonRepository {
 export interface IFarmDataRepository {
   create(input: CreateFarmDataInput): Promise<FarmDataRecord>;
 
+  /** Every submission across all farms. Admin use only. */
+  findAll(): Promise<FarmDataRecord[]>;
+
   findByFarmSeasonId(farmSeasonId: string): Promise<FarmDataRecord[]>;
 
   findByFarmId(farmId: string): Promise<FarmDataRecord[]>;
 
   findById(id: string): Promise<FarmDataRecord | null>;
 
-  updateStatus(id: string, status: FarmDataStatus): Promise<FarmDataRecord>;
+  updateStatus(
+    id: string,
+    status: FarmDataStatus,
+    rejectionReason?: string,
+  ): Promise<FarmDataRecord>;
 }
 
 export interface IEvidenceRepository {
