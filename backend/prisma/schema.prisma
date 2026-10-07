@@ -30,9 +30,28 @@ model User {
   createdAt    DateTime @default(now()) @map("created_at")
   updatedAt    DateTime @updatedAt @map("updated_at")
 
-  farms Farm[]
+  farms    Farm[]
+  corporate Corporate?
 
   @@map("users")
+}
+
+/// Corporate identity attached one-to-one to a user, per docs/DATABASE.md §11.
+/// Registration only creates farmers, so this row is provisioned separately;
+/// the demo seed is the MVP path.
+model Corporate {
+  id          String   @id @default(uuid())
+  userId      String   @unique @map("user_id")
+  companyName String   @map("company_name")
+  industry    String
+  region      String
+  status      String   @default("ACTIVE") @db.VarChar(20)
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("corporates")
 }
 
 model Farm {

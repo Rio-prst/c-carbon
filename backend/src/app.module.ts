@@ -14,6 +14,7 @@ import { RewardModule } from './rewards/reward.module';
 import { FarmDataModule } from './farm-data/farm-data.module';
 import { DemoSeedModule } from './demo-seed/demo-seed.module';
 import { CarbonProjectModule } from './carbon-project/carbon-project.module';
+import { CorporateModule } from './corporate/corporate.module';
 import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
 import { RolesGuard } from './auth/guards/roles.guard';
 import { ApiErrorFilter } from './common/api-error.filter';
@@ -33,6 +34,7 @@ import { PrismaModule } from './prisma/prisma.module';
     RewardModule,
     DemoSeedModule,
     CarbonProjectModule,
+    CorporateModule,
   ],
   controllers: [AppController],
   providers: [

@@ -70,4 +70,14 @@ export interface ICarbonProjectRepository {
   findFarmIds(carbonProjectId: string): Promise<string[]>;
 
   findProjectIdsByFarmId(farmId: string): Promise<string[]>;
+
+  /**
+   * Every farm id attached to any project, across all projects.
+   *
+   * A farm may join more than one project, because the unique constraint only
+   * guards (carbonProjectId, farmId). Summing each project's total_farms would
+   * therefore overstate how much land a corporate reader is shown as reachable,
+   * so the caller de-duplicates this list instead.
+   */
+  findAllProjectFarmIds(): Promise<string[]>;
 }

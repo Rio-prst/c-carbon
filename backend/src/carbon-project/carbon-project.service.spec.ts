@@ -94,6 +94,10 @@ class FakeProjectRepository implements ICarbonProjectRepository {
         .map(([id]) => id),
     );
   }
+
+  findAllProjectFarmIds() {
+    return Promise.resolve([...new Set([...this.membership.values()].flat())]);
+  }
 }
 
 class FakeFarmsService {

@@ -28,6 +28,6 @@ import { AdminModule } from '../admin/admin.module';
       useClass: ProjectEligibilityProvider,
     },
   ],
-  exports: [CarbonProjectService],
+  exports: [CarbonProjectService, CARBON_PROJECT_REPOSITORY],
 })
 export class CarbonProjectModule {}

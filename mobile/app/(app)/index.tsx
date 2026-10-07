@@ -1,12 +1,23 @@
 import { router } from 'expo-router';
 import { Pressable, StyleSheet, View } from 'react-native';
-import { Award, ClipboardCheck, Leaf, MapPin, Sprout } from 'lucide-react-native';
+import {
+  Award,
+  Building2,
+  ClipboardCheck,
+  Leaf,
+  MapPin,
+  Sprout,
+} from 'lucide-react-native';
 import { Button, Card, Screen, Text } from '../../components';
 import { colors, spacing } from '../../lib/theme';
 import { useAuth } from '../../store/auth';
 
 export default function HomeScreen() {
   const { user, signOut } = useAuth();
+
+  // Farmer-only endpoints. A corporate reader would get 403 from both, so these
+  // cards are hidden rather than left as dead ends.
+  const isFarmer = user?.role === 'FARMER';
 
   return (
     <Screen>
@@ -24,35 +35,39 @@ export default function HomeScreen() {
         </View>
 
         <View style={styles.actions}>
-          <Pressable onPress={() => router.push('/farms')}>
-            <Card style={styles.actionCard}>
-              <MapPin size={20} color={colors.brand.forest600} />
-              <View style={styles.actionText}>
-                <Text variant="bodyMedium" color={colors.neutral.ink900}>
-                  Lahan Saya
-                </Text>
-                <Text variant="caption" color={colors.neutral.ink500}>
-                  Kelola lahan terdaftar
-                </Text>
-              </View>
-            </Card>
-          </Pressable>
+          {isFarmer ? (
+            <Pressable onPress={() => router.push('/farms')}>
+              <Card style={styles.actionCard}>
+                <MapPin size={20} color={colors.brand.forest600} />
+                <View style={styles.actionText}>
+                  <Text variant="bodyMedium" color={colors.neutral.ink900}>
+                    Lahan Saya
+                  </Text>
+                  <Text variant="caption" color={colors.neutral.ink500}>
+                    Kelola lahan terdaftar
+                  </Text>
+                </View>
+              </Card>
+            </Pressable>
+          ) : null}
 
-          <Pressable onPress={() => router.push('/rewards')}>
-            <Card style={styles.actionCard}>
-              <Award size={20} color={colors.brand.forest600} />
-              <View style={styles.actionText}>
-                <Text variant="bodyMedium" color={colors.neutral.ink900}>
-                  Hadiah
-                </Text>
-                <Text variant="caption" color={colors.neutral.ink500}>
-                  Poin dan tingkat Anda
-                </Text>
-              </View>
-            </Card>
-          </Pressable>
+          {isFarmer ? (
+            <Pressable onPress={() => router.push('/rewards')}>
+              <Card style={styles.actionCard}>
+                <Award size={20} color={colors.brand.forest600} />
+                <View style={styles.actionText}>
+                  <Text variant="bodyMedium" color={colors.neutral.ink900}>
+                    Hadiah
+                  </Text>
+                  <Text variant="caption" color={colors.neutral.ink500}>
+                    Poin dan tingkat Anda
+                  </Text>
+                </View>
+              </Card>
+            </Pressable>
+          ) : null}
 
-          {user?.role === 'FARMER' ? (
+          {isFarmer ? (
             <Pressable onPress={() => router.push('/carbon/projects')}>
               <Card style={styles.actionCard}>
                 <Sprout size={20} color={colors.brand.forest600} />
@@ -68,6 +83,25 @@ export default function HomeScreen() {
             </Pressable>
           ) : null}
         </View>
+
+        {user?.role === 'CORPORATE' ? (
+          <Pressable
+            onPress={() => router.push('/corporate')}
+            style={styles.adminEntry}
+          >
+            <Card style={styles.actionCard}>
+              <Building2 size={20} color={colors.brand.forest600} />
+              <View style={styles.actionText}>
+                <Text variant="bodyMedium" color={colors.neutral.ink900}>
+                  Ringkasan Korporat
+                </Text>
+                <Text variant="caption" color={colors.neutral.ink500}>
+                  Skala agregat proyek karbon
+                </Text>
+              </View>
+            </Card>
+          </Pressable>
+        ) : null}
 
         {user?.role === 'ADMIN' ? (
           <>
