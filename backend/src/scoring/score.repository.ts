@@ -5,6 +5,7 @@ import type {
   ScoreRecord,
   IScoreRepository,
   ScoreType,
+  StoredScore,
 } from './score.repository.interface';
 
 @Injectable()
@@ -33,12 +34,17 @@ export class ScoreRepository implements IScoreRepository {
     return Promise.resolve(score);
   }
 
-  findByFarmId(
+  findByFarmId<K extends ScoreType>(
     farmId: string,
-    scoreType: ScoreType,
-  ): Promise<ScoreRecord | null> {
+    scoreType: K,
+  ): Promise<StoredScore<K> | null> {
     const farmScores = this.scoreMap.get(farmId);
     if (!farmScores) return Promise.resolve(null);
-    return Promise.resolve(farmScores.get(scoreType) ?? null);
+    // The map stores one record per score type but does not keep the
+    // breakdown/score-type correlation, so it is restored on read. The type
+    // system guarantees the two were written together via `CreateScoreInput`.
+    return Promise.resolve(
+      (farmScores.get(scoreType) as StoredScore<K> | undefined) ?? null,
+    );
   }
 }
