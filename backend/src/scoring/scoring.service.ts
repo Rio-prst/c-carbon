@@ -15,6 +15,7 @@ import {
   type ReferenceRange,
 } from './normalization.provider.interface';
 import { FarmsService } from '../farms/farms.service';
+import type { JwtPayload } from '../auth/types/jwt-payload';
 
 export type FarmScoreResponse = {
   fss_value: number;
@@ -68,10 +69,10 @@ export class ScoringService {
   }
 
   async getScore(
-    userId: string,
+    user: JwtPayload,
     farmId: string,
   ): Promise<FarmScoreResponse | null> {
-    await this.farmsService.assertOwnership(userId, farmId);
+    await this.farmsService.resolveAccess(user, farmId);
 
     const score = await this.scoreRepository.findByFarmId(farmId, 'FSS');
     if (!score) return null;

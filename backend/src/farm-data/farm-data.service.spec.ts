@@ -1,4 +1,5 @@
 import { jest } from '@jest/globals';
+import type { JwtPayload } from '../auth/types/jwt-payload';
 import { FarmDataService } from './farm-data.service';
 import { FarmDataRepository } from './farm-data.repository';
 import { FarmSeasonRepository } from './farm-season.repository';
@@ -6,8 +7,13 @@ import type { FarmSeasonRecord } from './farm-data.repository.interface';
 
 type AsyncMock = jest.Mock<() => Promise<unknown>>;
 
+const OWNER: JwtPayload = { sub: 'user-1', role: 'FARMER' };
+const ADMIN: JwtPayload = { sub: 'admin-1', role: 'ADMIN' };
+
+const farm = { id: 'farm-1', userId: OWNER.sub };
+
 const farmsService = {
-  assertOwnership: jest.fn<() => Promise<unknown>>(),
+  resolveAccess: jest.fn<() => Promise<unknown>>(),
 };
 
 describe('FarmDataService', () => {
@@ -24,7 +30,7 @@ describe('FarmDataService', () => {
   };
 
   beforeEach(() => {
-    farmsService.assertOwnership.mockResolvedValue(undefined);
+    farmsService.resolveAccess.mockResolvedValue(farm);
     dataRepo = new FarmDataRepository();
     seasonRepo = new FarmSeasonRepository();
     scoring = {
@@ -50,7 +56,7 @@ describe('FarmDataService', () => {
   });
 
   it('awards a submission reward after recording the data', async () => {
-    const created = await service.createData('user-1', 'farm-1', {
+    const created = await service.createData(OWNER, 'farm-1', {
       farmSeasonId: season.id,
       yieldKg: 4000,
       lowCarbonPractice: true,
@@ -70,7 +76,7 @@ describe('FarmDataService', () => {
   it('keeps the submission even when the reward fails', async () => {
     rewards.awardEvent.mockRejectedValue(new Error('reward store down'));
 
-    const created = await service.createData('user-1', 'farm-1', {
+    const created = await service.createData(OWNER, 'farm-1', {
       farmSeasonId: season.id,
       yieldKg: 4000,
       lowCarbonPractice: true,
@@ -81,7 +87,7 @@ describe('FarmDataService', () => {
   });
 
   it('recalculates the score for every submission', async () => {
-    await service.createData('user-1', 'farm-1', {
+    await service.createData(OWNER, 'farm-1', {
       farmSeasonId: season.id,
       yieldKg: 4000,
       lowCarbonPractice: true,
@@ -92,7 +98,7 @@ describe('FarmDataService', () => {
 
   it('refuses a season that belongs to another farm', async () => {
     await expect(
-      service.createData('user-1', 'farm-1', {
+      service.createData(OWNER, 'farm-1', {
         farmSeasonId: 'does-not-exist',
         yieldKg: 4000,
         lowCarbonPractice: true,
@@ -100,5 +106,34 @@ describe('FarmDataService', () => {
     ).rejects.toThrow();
 
     expect(rewards.awardEvent).not.toHaveBeenCalled();
+  });
+
+  it('routes the submission reward to the farm owner when an admin writes', async () => {
+    await service.createData(ADMIN, 'farm-1', {
+      farmSeasonId: season.id,
+      yieldKg: 4000,
+      lowCarbonPractice: true,
+    });
+
+    const call = rewards.awardEvent.mock.calls[0] as unknown as [
+      string,
+      string,
+    ];
+    expect(call[0]).toBe(OWNER.sub);
+    expect(call[0]).not.toBe(ADMIN.sub);
+  });
+
+  it('recalculates the score for the farm owner, not the requester', async () => {
+    await service.createData(ADMIN, 'farm-1', {
+      farmSeasonId: season.id,
+      yieldKg: 4000,
+      lowCarbonPractice: true,
+    });
+
+    const call = scoring.recalculateFromFarmData.mock.calls[0] as unknown as [
+      string,
+      string,
+    ];
+    expect(call[0]).toBe(OWNER.sub);
   });
 });

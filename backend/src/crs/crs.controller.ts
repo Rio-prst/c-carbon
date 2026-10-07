@@ -14,6 +14,6 @@ export class CRSController {
     @Param('farmId') farmId: string,
     @CurrentUser() user: JwtPayload,
   ) {
-    return this.readinessService.getReadiness(user.sub, farmId);
+    return this.readinessService.getReadiness(user, farmId);
   }
 }

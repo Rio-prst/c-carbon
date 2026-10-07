@@ -18,7 +18,7 @@ export class EvidenceController {
     @Body() dto: CreateEvidenceDto,
     @CurrentUser() user: JwtPayload,
   ) {
-    return this.evidenceService.uploadEvidence(user.sub, farmId, {
+    return this.evidenceService.uploadEvidence(user, farmId, {
       farmDataId: dto.farmDataId,
       type: dto.type,
       url: dto.url,
@@ -34,7 +34,7 @@ export class EvidenceController {
     @CurrentUser() user: JwtPayload,
   ) {
     return this.evidenceService.getEvidenceByFarmDataId(
-      user.sub,
+      user,
       farmId,
       farmDataId,
     );

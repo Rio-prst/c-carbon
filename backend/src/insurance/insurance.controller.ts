@@ -14,6 +14,6 @@ export class InsuranceController {
     @Param('farmId') farmId: string,
     @CurrentUser() user: JwtPayload,
   ) {
-    return this.insuranceService.getInsurance(user.sub, farmId);
+    return this.insuranceService.getInsurance(user, farmId);
   }
 }

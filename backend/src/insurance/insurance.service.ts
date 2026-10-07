@@ -5,6 +5,7 @@ import {
   type InsuranceRecord,
 } from './insurance.repository.interface';
 import { FarmsService } from '../farms/farms.service';
+import type { JwtPayload } from '../auth/types/jwt-payload';
 
 @Injectable()
 export class InsuranceService {
@@ -19,10 +20,10 @@ export class InsuranceService {
    * record of a farm they own.
    */
   async getInsurance(
-    userId: string,
+    user: JwtPayload,
     farmId: string,
   ): Promise<InsuranceRecord | null> {
-    await this.farmsService.assertOwnership(userId, farmId);
+    await this.farmsService.resolveAccess(user, farmId);
     return this.insuranceRepository.findByFarmId(farmId);
   }
 }

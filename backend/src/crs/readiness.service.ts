@@ -17,6 +17,7 @@ import {
   SCORE_REPOSITORY,
   type IScoreRepository,
 } from '../scoring/score.repository.interface';
+import type { JwtPayload } from '../auth/types/jwt-payload';
 
 export type CRSResponse = {
   crs_value: number;
@@ -48,8 +49,8 @@ export class ReadinessService {
     private readonly farmsService: FarmsService,
   ) {}
 
-  async getReadiness(userId: string, farmId: string): Promise<CRSResponse> {
-    const farm = await this.farmsService.assertOwnership(userId, farmId);
+  async getReadiness(user: JwtPayload, farmId: string): Promise<CRSResponse> {
+    const farm = await this.farmsService.resolveAccess(user, farmId);
 
     const farmData = await this.farmDataRepository.findByFarmId(farmId);
 
@@ -81,15 +82,42 @@ export class ReadinessService {
       },
     });
 
+    await this.persistIfChanged(farmId, result);
+
+    return this.serialize(result);
+  }
+
+  /**
+   * Caches the CRS so the persisted score can be read without recomputing it.
+   *
+   * This endpoint is a GET, so it must not write on every call: a farmer
+   * refreshing the screen would otherwise churn the store and reset the
+   * calculated-at timestamp each time. The value and the provisional flag are
+   * compared, so a genuine change from farm data or evidence is still recorded
+   * while a repeat read is a no-op.
+   *
+   * Recalculation stays triggered by data changes, the same path FSS uses.
+   */
+  private async persistIfChanged(
+    farmId: string,
+    result: CRSResult,
+  ): Promise<void> {
+    const stored = await this.scoreRepository.findByFarmId(farmId, 'CRS');
+    if (
+      stored &&
+      stored.value === result.value &&
+      stored.isProvisional === result.isProvisional
+    ) {
+      return;
+    }
+
     await this.scoreRepository.save({
       farmId,
       scoreType: 'CRS',
       value: result.value,
-      breakdown: result.breakdown as never,
+      breakdown: result.breakdown,
       isProvisional: result.isProvisional,
     });
-
-    return this.serialize(result);
   }
 
   private serialize(result: CRSResult): CRSResponse {

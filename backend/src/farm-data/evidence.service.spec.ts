@@ -1,16 +1,17 @@
 import { NotFoundException } from '@nestjs/common';
 import { describe, expect, it, beforeEach, jest } from '@jest/globals';
+import type { JwtPayload } from '../auth/types/jwt-payload';
 import { EvidenceService } from './evidence.service';
 import { EvidenceRepository } from './evidence.repository';
 import { FarmDataRepository } from './farm-data.repository';
 
-const OWNER_ID = 'farmer-1';
-const OTHER_ID = 'farmer-2';
+const OWNER: JwtPayload = { sub: 'farmer-1', role: 'FARMER' };
+const OTHER: JwtPayload = { sub: 'farmer-2', role: 'FARMER' };
 const FARM_ID = 'farm-1';
 
 const farmsService = {
-  assertOwnership:
-    jest.fn<(userId: string, farmId: string) => Promise<unknown>>(),
+  resolveAccess:
+    jest.fn<(user: JwtPayload, farmId: string) => Promise<unknown>>(),
 };
 
 async function seed(): Promise<FarmDataRepository> {
@@ -31,8 +32,8 @@ describe('EvidenceService', () => {
   beforeEach(async () => {
     dataRepository = await seed();
     evidenceRepository = new EvidenceRepository();
-    farmsService.assertOwnership.mockReset();
-    farmsService.assertOwnership.mockResolvedValue(undefined);
+    farmsService.resolveAccess.mockReset();
+    farmsService.resolveAccess.mockResolvedValue(undefined);
     service = new EvidenceService(
       evidenceRepository,
       dataRepository,
@@ -43,7 +44,7 @@ describe('EvidenceService', () => {
   it('stores evidence against a submission the caller owns', async () => {
     const [submission] = await dataRepository.findByFarmId(FARM_ID);
 
-    const created = await service.uploadEvidence(OWNER_ID, FARM_ID, {
+    const created = await service.uploadEvidence(OWNER, FARM_ID, {
       farmDataId: submission.id,
       type: 'FIELD_PHOTO',
       fileName: 'bukti-1.jpg',
@@ -54,13 +55,13 @@ describe('EvidenceService', () => {
   });
 
   it('refuses evidence on a farm the caller does not own', async () => {
-    farmsService.assertOwnership.mockRejectedValue(
+    farmsService.resolveAccess.mockRejectedValue(
       new NotFoundException('Farm not found'),
     );
     const [submission] = await dataRepository.findByFarmId(FARM_ID);
 
     await expect(
-      service.uploadEvidence(OTHER_ID, FARM_ID, {
+      service.uploadEvidence(OTHER, FARM_ID, {
         farmDataId: submission.id,
       }),
     ).rejects.toThrow();
@@ -72,7 +73,7 @@ describe('EvidenceService', () => {
    */
   it('refuses evidence that hangs off another farm', async () => {
     await expect(
-      service.uploadEvidence(OWNER_ID, FARM_ID, {
+      service.uploadEvidence(OWNER, FARM_ID, {
         farmDataId: 'submission-from-another-farm',
       }),
     ).rejects.toThrow(NotFoundException);
@@ -80,17 +81,17 @@ describe('EvidenceService', () => {
 
   it('lists evidence for a submission', async () => {
     const [submission] = await dataRepository.findByFarmId(FARM_ID);
-    await service.uploadEvidence(OWNER_ID, FARM_ID, {
+    await service.uploadEvidence(OWNER, FARM_ID, {
       farmDataId: submission.id,
       fileName: 'a.jpg',
     });
-    await service.uploadEvidence(OWNER_ID, FARM_ID, {
+    await service.uploadEvidence(OWNER, FARM_ID, {
       farmDataId: submission.id,
       fileName: 'b.pdf',
     });
 
     const result = await service.getEvidenceByFarmDataId(
-      OWNER_ID,
+      OWNER,
       FARM_ID,
       submission.id,
     );
@@ -101,7 +102,7 @@ describe('EvidenceService', () => {
   it('does not leak evidence when reading another farm submission', async () => {
     await expect(
       service.getEvidenceByFarmDataId(
-        OWNER_ID,
+        OWNER,
         FARM_ID,
         'submission-from-another-farm',
       ),

@@ -18,7 +18,7 @@ export class FarmDataController {
     @Body() dto: CreateFarmDataDto,
     @CurrentUser() user: JwtPayload,
   ) {
-    return this.farmDataService.createData(user.sub, farmId, {
+    return this.farmDataService.createData(user, farmId, {
       farmSeasonId: dto.farmSeasonId,
       yieldKg: dto.yieldKg,
       waterUsage: dto.waterUsage,
@@ -34,7 +34,7 @@ export class FarmDataController {
   @Get()
   @Roles('FARMER', 'ADMIN')
   getHistory(@Param('farmId') farmId: string, @CurrentUser() user: JwtPayload) {
-    return this.farmDataService.getDataByFarmId(user.sub, farmId);
+    return this.farmDataService.getDataByFarmId(user, farmId);
   }
 
   @Patch(':id/status')
@@ -46,7 +46,7 @@ export class FarmDataController {
     @CurrentUser() user: JwtPayload,
   ) {
     return this.farmDataService.updateDataStatus(
-      user.sub,
+      user,
       farmId,
       id,
       dto.status,
@@ -61,7 +61,7 @@ export class FarmDataController {
     @Body() dto: CreateFarmSeasonDto,
     @CurrentUser() user: JwtPayload,
   ) {
-    return this.farmDataService.createSeason(user.sub, farmId, {
+    return this.farmDataService.createSeason(user, farmId, {
       seasonLabel: dto.seasonLabel,
       startDate: dto.startDate,
       endDate: dto.endDate,
@@ -72,6 +72,6 @@ export class FarmDataController {
   @Get('seasons')
   @Roles('FARMER', 'ADMIN')
   getSeasons(@Param('farmId') farmId: string, @CurrentUser() user: JwtPayload) {
-    return this.farmDataService.getSeasonsByFarmId(user.sub, farmId);
+    return this.farmDataService.getSeasonsByFarmId(user, farmId);
   }
 }
