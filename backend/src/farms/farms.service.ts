@@ -12,6 +12,7 @@ import {
   type IFarmsRepository,
 } from './farms.repository.interface';
 import { CreateFarmDto } from './dto/create-farm.dto';
+import type { FarmStatus } from '../generated/prisma/client.js';
 import type { JwtPayload } from '../auth/types/jwt-payload';
 
 const DFID_PREFIX = 'CF';
@@ -148,6 +149,29 @@ export class FarmsService {
    */
   async findByIdForAdmin(farmId: string): Promise<FarmRecord | null> {
     return this.farmsRepository.findById(farmId);
+  }
+
+  /**
+   * Every farm regardless of owner, for admin governance that spans farmers,
+   * such as the carbon eligibility filter. Like `findByIdForAdmin` this
+   * deliberately bypasses ownership, so it must stay unreachable from any
+   * farmer-facing controller. The repository is not exported for exactly this
+   * reason.
+   */
+  async findAllForAdmin(): Promise<FarmRecord[]> {
+    return this.farmsRepository.findAll();
+  }
+
+  /**
+   * Advances a farm's status after it joins a project. Guarded here for the
+   * same reason as the admin readers above: the caller must not be able to set
+   * an arbitrary state, only to record that the underlying condition happened.
+   */
+  async updateStatusForAdmin(
+    farmId: string,
+    status: FarmStatus,
+  ): Promise<FarmRecord> {
+    return this.farmsRepository.updateStatus(farmId, status);
   }
 
   private generateDigitalFarmId(): string {

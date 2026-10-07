@@ -11,5 +11,9 @@ import { RewardModule } from '../rewards/reward.module';
   imports: [FarmsModule, FarmDataModule, ScoringModule, RewardModule],
   controllers: [ReviewController],
   providers: [ReviewService, AuditLog],
+  // Exported so other admin domains can record lifecycle actions. Registered
+  // under the class token only, otherwise a second instance would keep its own
+  // private log and the admin audit endpoint would miss those entries.
+  exports: [AuditLog],
 })
 export class AdminModule {}
