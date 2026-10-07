@@ -132,4 +132,11 @@ export class CarbonProjectRepository implements ICarbonProjectRepository {
     });
     return rows.map((row) => row.carbonProjectId);
   }
+
+  async findAllProjectFarmIds(): Promise<string[]> {
+    const rows = await this.prisma.projectFarm.findMany({
+      select: { farmId: true },
+    });
+    return rows.map((row) => row.farmId);
+  }
 }
