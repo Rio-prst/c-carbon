@@ -1,6 +1,6 @@
 import { router } from 'expo-router';
 import { Pressable, StyleSheet, View } from 'react-native';
-import { Award, ClipboardCheck, MapPin } from 'lucide-react-native';
+import { Award, ClipboardCheck, Leaf, MapPin, Sprout } from 'lucide-react-native';
 import { Button, Card, Screen, Text } from '../../components';
 import { colors, spacing } from '../../lib/theme';
 import { useAuth } from '../../store/auth';
@@ -51,25 +51,60 @@ export default function HomeScreen() {
               </View>
             </Card>
           </Pressable>
+
+          {user?.role === 'FARMER' ? (
+            <Pressable onPress={() => router.push('/carbon/projects')}>
+              <Card style={styles.actionCard}>
+                <Sprout size={20} color={colors.brand.forest600} />
+                <View style={styles.actionText}>
+                  <Text variant="bodyMedium" color={colors.neutral.ink900}>
+                    Proyek Karbon
+                  </Text>
+                  <Text variant="caption" color={colors.neutral.ink500}>
+                    Konteks proyek kandidat
+                  </Text>
+                </View>
+              </Card>
+            </Pressable>
+          ) : null}
         </View>
 
         {user?.role === 'ADMIN' ? (
-          <Pressable
-            onPress={() => router.push('/admin/review')}
-            style={styles.adminEntry}
-          >
-            <Card style={styles.actionCard}>
-              <ClipboardCheck size={20} color={colors.brand.forest600} />
-              <View style={styles.actionText}>
-                <Text variant="bodyMedium" color={colors.neutral.ink900}>
-                  Review Data
-                </Text>
-                <Text variant="caption" color={colors.neutral.ink500}>
-                  Verifikasi kiriman petani
-                </Text>
-              </View>
-            </Card>
-          </Pressable>
+          <>
+            <Pressable
+              onPress={() => router.push('/admin/review')}
+              style={styles.adminEntry}
+            >
+              <Card style={styles.actionCard}>
+                <ClipboardCheck size={20} color={colors.brand.forest600} />
+                <View style={styles.actionText}>
+                  <Text variant="bodyMedium" color={colors.neutral.ink900}>
+                    Review Data
+                  </Text>
+                  <Text variant="caption" color={colors.neutral.ink500}>
+                    Verifikasi kiriman petani
+                  </Text>
+                </View>
+              </Card>
+            </Pressable>
+
+            <Pressable
+              onPress={() => router.push('/admin/projects')}
+              style={styles.adminEntry}
+            >
+              <Card style={styles.actionCard}>
+                <Leaf size={20} color={colors.brand.forest600} />
+                <View style={styles.actionText}>
+                  <Text variant="bodyMedium" color={colors.neutral.ink900}>
+                    Kelola Proyek
+                  </Text>
+                  <Text variant="caption" color={colors.neutral.ink500}>
+                    Filter kelayakan dan agregasi
+                  </Text>
+                </View>
+              </Card>
+            </Pressable>
+          </>
         ) : null}
 
         <Button

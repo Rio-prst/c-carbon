@@ -24,7 +24,8 @@ export type AuditRecord = {
   action: string;
   targetType: string;
   targetId: string;
-  farmId: string;
+  /** Absent for project lifecycle actions, which span many farms. */
+  farmId?: string;
   details?: string;
   createdAt: string;
 };

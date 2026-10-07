@@ -87,4 +87,21 @@ export class FarmsRepository implements IFarmsRepository {
     });
     return farm ? toFarmRecord(farm) : null;
   }
+
+  async findAll(): Promise<FarmRecord[]> {
+    const farms = await this.prisma.farm.findMany({
+      orderBy: { createdAt: 'asc' },
+      select: farmSelect,
+    });
+    return farms.map(toFarmRecord);
+  }
+
+  async updateStatus(id: string, status: FarmStatus): Promise<FarmRecord> {
+    const farm = await this.prisma.farm.update({
+      where: { id },
+      data: { status },
+      select: farmSelect,
+    });
+    return toFarmRecord(farm);
+  }
 }

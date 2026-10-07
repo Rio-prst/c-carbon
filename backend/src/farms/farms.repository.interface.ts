@@ -35,4 +35,14 @@ export interface IFarmsRepository {
   findByUserId(userId: string): Promise<FarmRecord[]>;
 
   findById(id: string): Promise<FarmRecord | null>;
+
+  /** Every farm, regardless of owner. Admin governance use only. */
+  findAll(): Promise<FarmRecord[]>;
+
+  /**
+   * Advances a farm's status. Only ever called with a status derived from the
+   * farm's own data, never from a client-supplied value, so a farm cannot be
+   * pushed into CARBON_CANDIDATE without being aggregated.
+   */
+  updateStatus(id: string, status: FarmStatus): Promise<FarmRecord>;
 }

@@ -51,6 +51,7 @@ model Farm {
   user    User         @relation(fields: [userId], references: [id])
   seasons FarmSeason[]
   data    FarmData[]
+  projects ProjectFarm[]
 
   @@index([userId])
   @@map("farms")
@@ -117,4 +118,51 @@ model Evidence {
 
   @@index([farmDataId])
   @@map("evidence")
+}
+
+/// The MVP only reaches AGGREGATING. The later phases of the conceptual
+/// lifecycle are listed in docs/DATABASE.md but must not be reachable in MVP,
+/// since claiming verification or issuance happened would be a false
+/// statement about the platform.
+enum ProjectStatus {
+  CANDIDATE
+  ASSESSMENT
+  AGGREGATING
+  VERIFICATION
+  REGISTRATION
+  ISSUANCE
+  TRADING
+}
+
+model CarbonProject {
+  id             String        @id @default(uuid())
+  name           String
+  status         ProjectStatus @default(CANDIDATE)
+  region         String
+  commodityFocus String        @map("commodity_focus") @db.VarChar(100)
+  totalFarms     Int           @default(0) @map("total_farms")
+  totalAreaHa    Decimal       @default(0) @map("total_area_ha") @db.Decimal(12, 4)
+  createdAt      DateTime      @default(now()) @map("created_at")
+  updatedAt      DateTime      @updatedAt @map("updated_at")
+
+  projectFarms ProjectFarm[]
+
+  @@map("carbon_projects")
+}
+
+/// Membership of a farm in a project. total_farms and total_area_ha on the
+/// project are a denormalised aggregate of these rows, so the unique pair is
+/// what stops the same farm being counted twice.
+model ProjectFarm {
+  id              String        @id @default(uuid())
+  carbonProjectId String        @map("carbon_project_id")
+  farmId          String        @map("farm_id")
+  addedAt         DateTime      @default(now()) @map("added_at")
+  carbonProject   CarbonProject @relation(fields: [carbonProjectId], references: [id], onDelete: Cascade)
+  farm            Farm          @relation(fields: [farmId], references: [id], onDelete: Cascade)
+
+  @@unique([carbonProjectId, farmId])
+  @@index([carbonProjectId])
+  @@index([farmId])
+  @@map("project_farms")
 }

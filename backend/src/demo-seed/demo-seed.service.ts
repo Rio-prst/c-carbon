@@ -104,6 +104,32 @@ export class DemoSeedService implements OnModuleInit {
       commodity: 'Jagung',
     });
 
+    // Carbon projects are scoped to rubber per the competition brief, so three
+    // rubber farms must pass every eligibility gate for aggregation to succeed
+    // in the demo. The farms above stay non-rubber on purpose, so the filter
+    // has something to actually reject.
+    const rubberFarmA = await this.ensureFarm(farmerA.id, {
+      name: 'Kebun Karet Blok A',
+      lat: -6.92,
+      lng: 107.58,
+      landAreaHa: 4.5,
+      commodity: 'Karet',
+    });
+    const rubberFarmB = await this.ensureFarm(farmerB.id, {
+      name: 'Kebun Karet Blok B',
+      lat: -6.93,
+      lng: 107.59,
+      landAreaHa: 3.8,
+      commodity: 'Karet',
+    });
+    const rubberFarmC = await this.ensureFarm(farmerA.id, {
+      name: 'Kebun Karet Blok C',
+      lat: -6.94,
+      lng: 107.6,
+      landAreaHa: 5.2,
+      commodity: 'Karet',
+    });
+
     await this.insuranceRepository.create({
       farmId: farmA1.id,
       partner: 'PT Asuransi Tani',
@@ -186,6 +212,57 @@ export class DemoSeedService implements OnModuleInit {
         ...data,
         farmDataStatus: data.status,
       });
+    }
+
+    // Each rubber farm gets a verified season with every core field filled and
+    // eligible practices, so all four gates pass. Aggregation needs three of
+    // them, and the count is deliberately exactly the threshold: raising the
+    // threshold later makes the demo fail loudly instead of silently.
+    for (const [index, rubberFarm] of [
+      rubberFarmA,
+      rubberFarmB,
+      rubberFarmC,
+    ].entries()) {
+      const ownerId = index === 1 ? farmerB.id : farmerA.id;
+      const season = await this.ensureSeason(rubberFarm.id, '2025/2026-III');
+
+      if (
+        (await this.farmDataRepository.findByFarmSeasonId(season.id)).length > 0
+      ) {
+        continue;
+      }
+
+      const data = await this.farmDataRepository.create({
+        farmId: rubberFarm.id,
+        farmSeasonId: season.id,
+        yieldKg: 2600,
+        waterUsage: 780,
+        fertilizerUsage: 140,
+        pesticideUsage: 9,
+        wasteManagementPractice: 'composting',
+        soilPractice: 'cover_cropping',
+        energyUsage: 190,
+        lowCarbonPractice: true,
+      });
+
+      await this.evidenceRepository.create({
+        farmDataId: data.id,
+        type: 'HARVEST_REPORT',
+        fileName: `laporan-karet-${index + 1}.pdf`,
+        url: 'https://example.test/evidence/rubber-harvest-report.pdf',
+      });
+      await this.farmDataRepository.updateStatus(
+        data.id,
+        'VERIFIED' satisfies FarmDataStatus,
+      );
+      await this.scoringService.recalculateFromFarmData(
+        ownerId,
+        rubberFarm.id,
+        {
+          ...data,
+          farmDataStatus: 'VERIFIED',
+        },
+      );
     }
 
     this.logger.log(
