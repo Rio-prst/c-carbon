@@ -5,6 +5,7 @@ import { InsuranceModule } from '../insurance/insurance.module';
 import { RewardModule } from '../rewards/reward.module';
 import { ScoringModule } from '../scoring/scoring.module';
 import { UsersModule } from '../users/users.module';
+import { CorporateModule } from '../corporate/corporate.module';
 import { DemoSeedService } from './demo-seed.service';
 
 /**
@@ -18,6 +19,7 @@ import { DemoSeedService } from './demo-seed.service';
     InsuranceModule,
     ScoringModule,
     RewardModule,
+    CorporateModule,
   ],
   providers: [DemoSeedService],
 })

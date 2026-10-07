@@ -12,6 +12,8 @@ import {
 import { FarmDataStatus } from '../farm-data/farm-data.repository.interface';
 import { INSURANCE_REPOSITORY } from '../insurance/insurance.repository';
 import type { IInsuranceRepository } from '../insurance/insurance.repository';
+import { CORPORATE_REPOSITORY } from '../corporate/corporate.repository.interface';
+import type { ICorporateRepository } from '../corporate/corporate.repository.interface';
 import { FarmsService } from '../farms/farms.service';
 import { RewardService } from '../rewards/reward.service';
 import { ScoringService } from '../scoring/scoring.service';
@@ -51,6 +53,8 @@ export class DemoSeedService implements OnModuleInit {
     private readonly insuranceRepository: IInsuranceRepository,
     private readonly scoringService: ScoringService,
     private readonly rewardService: RewardService,
+    @Inject(CORPORATE_REPOSITORY)
+    private readonly corporateRepository: ICorporateRepository,
     private readonly configService: ConfigService,
   ) {}
 
@@ -80,7 +84,14 @@ export class DemoSeedService implements OnModuleInit {
       'FARMER',
     );
     await this.ensureUser('Admin Demo', 'admin@demo.test', 'ADMIN');
-    await this.ensureUser('Korporat Demo', 'corporate@demo.test', 'CORPORATE');
+    const corporateUser = await this.ensureUser(
+      'Korporat Demo',
+      'corporate@demo.test',
+      'CORPORATE',
+    );
+    // A corporate role alone has no company identity, so the overview would
+    // have nothing to attribute the figures to.
+    await this.ensureCorporate(corporateUser.id);
 
     const farmA1 = await this.ensureFarm(farmerA.id, {
       name: 'Lahan Padi Sawah',
@@ -286,6 +297,21 @@ export class DemoSeedService implements OnModuleInit {
       email,
       role,
       passwordHash: await bcrypt.hash(DEMO_PASSWORD, BCRYPT_ROUNDS),
+    });
+  }
+
+  /** Reuses the existing profile, keyed on the 1:1 user relation. */
+  private async ensureCorporate(userId: string): Promise<void> {
+    const existing = await this.corporateRepository.findByUserId(userId);
+    if (existing != null) {
+      return;
+    }
+
+    await this.corporateRepository.create({
+      userId,
+      companyName: 'PT Karbon Nusantara',
+      industry: 'Industri manufaktur',
+      region: 'Jawa Barat',
     });
   }
 
