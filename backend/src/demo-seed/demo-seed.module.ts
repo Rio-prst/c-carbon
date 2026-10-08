@@ -6,6 +6,7 @@ import { RewardModule } from '../rewards/reward.module';
 import { ScoringModule } from '../scoring/scoring.module';
 import { UsersModule } from '../users/users.module';
 import { CorporateModule } from '../corporate/corporate.module';
+import { ConsentModule } from '../consent/consent.module';
 import { DemoSeedService } from './demo-seed.service';
 
 /**
@@ -20,6 +21,7 @@ import { DemoSeedService } from './demo-seed.service';
     ScoringModule,
     RewardModule,
     CorporateModule,
+    ConsentModule,
   ],
   providers: [DemoSeedService],
 })

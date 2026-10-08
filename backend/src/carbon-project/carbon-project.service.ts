@@ -9,6 +9,7 @@ import { AuditLog } from '../admin/audit-log.service';
 import { FARM_DATA_REPOSITORY } from '../farm-data/farm-data.repository.interface';
 import type { IFarmDataRepository } from '../farm-data/farm-data.repository.interface';
 import { FarmsService } from '../farms/farms.service';
+import { ConsentService } from '../consent/consent.service';
 import {
   CARBON_PROJECT_REPOSITORY,
   isMvpProjectStatus,
@@ -71,6 +72,7 @@ export class CarbonProjectService {
     @Inject(FARM_DATA_REPOSITORY)
     private readonly farmDataRepository: IFarmDataRepository,
     private readonly farmsService: FarmsService,
+    private readonly consentService: ConsentService,
     private readonly auditLog: AuditLog,
   ) {}
 
@@ -151,10 +153,34 @@ export class CarbonProjectService {
   }> {
     const farms = await this.farmsService.findAllForAdmin();
     const verdicts = await Promise.all(
-      farms.map(async (farm) => ({
-        farm,
-        verdict: await this.evaluateFarm(farm),
-      })),
+      farms.map(async (farm) => {
+        const verdict = await this.evaluateFarm(farm);
+        const hasConsent =
+          await this.consentService.hasActiveCarbonProjectConsent(farm.userId);
+
+        // Listed as its own reason so an admin can tell a withdrawn consent
+        // apart from incomplete data.
+        const criteria = hasConsent
+          ? verdict.criteria
+          : [
+              ...verdict.criteria,
+              {
+                key: 'consent' as const,
+                passed: false,
+                reason:
+                  'Persetujuan penggunaan data proyek karbon telah ditarik atau belum diberikan',
+              },
+            ];
+
+        return {
+          farm,
+          verdict: {
+            ...verdict,
+            criteria,
+            eligible: verdict.eligible && hasConsent,
+          },
+        };
+      }),
     );
 
     const eligible = verdicts
@@ -226,6 +252,7 @@ export class CarbonProjectService {
 
     const farms = await this.farmsService.findAllForAdmin();
     const candidates: string[] = [];
+    const blockedByConsent: string[] = [];
 
     for (const farm of farms) {
       if (
@@ -234,6 +261,17 @@ export class CarbonProjectService {
       ) {
         continue;
       }
+
+      // Consent is a governance boundary, not a record kept for its own sake:
+      // docs/BUSINESS-RULES.md §11 says a farmer can withdraw it, so a farm
+      // whose owner withdrew must not silently keep entering projects.
+      if (
+        !(await this.consentService.hasActiveCarbonProjectConsent(farm.userId))
+      ) {
+        blockedByConsent.push(farm.id);
+        continue;
+      }
+
       const verdict = await this.evaluateFarm(farm);
       if (verdict.eligible) candidates.push(farm.id);
     }
@@ -247,6 +285,9 @@ export class CarbonProjectService {
           required: this.eligibility.minEligibleFarms,
           eligible: candidates.length,
           commodity_focus: project.commodityFocus,
+          // Surfaced so a farmer withdrawing consent does not read as an
+          // unexplained data problem.
+          blocked_by_missing_consent: blockedByConsent.length,
         },
       });
     }

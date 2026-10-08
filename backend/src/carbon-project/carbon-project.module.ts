@@ -11,9 +11,10 @@ import { PROJECT_ELIGIBILITY_PROVIDER } from './project-eligibility.provider.int
 import { FarmsModule } from '../farms/farms.module';
 import { FarmDataModule } from '../farm-data/farm-data.module';
 import { AdminModule } from '../admin/admin.module';
+import { ConsentModule } from '../consent/consent.module';
 
 @Module({
-  imports: [FarmsModule, FarmDataModule, AdminModule],
+  imports: [FarmsModule, FarmDataModule, AdminModule, ConsentModule],
   controllers: [CarbonProjectController, AdminCarbonProjectController],
   providers: [
     CarbonProjectService,

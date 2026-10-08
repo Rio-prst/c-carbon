@@ -14,6 +14,12 @@ import { INSURANCE_REPOSITORY } from '../insurance/insurance.repository';
 import type { IInsuranceRepository } from '../insurance/insurance.repository';
 import { CORPORATE_REPOSITORY } from '../corporate/corporate.repository.interface';
 import type { ICorporateRepository } from '../corporate/corporate.repository.interface';
+import {
+  CARBON_PROJECT_PURPOSE,
+  CONSENT_REPOSITORY,
+  CONSENT_VERSION,
+  type IConsentRepository,
+} from '../consent/consent.repository.interface';
 import { FarmsService } from '../farms/farms.service';
 import { RewardService } from '../rewards/reward.service';
 import { ScoringService } from '../scoring/scoring.service';
@@ -55,6 +61,8 @@ export class DemoSeedService implements OnModuleInit {
     private readonly rewardService: RewardService,
     @Inject(CORPORATE_REPOSITORY)
     private readonly corporateRepository: ICorporateRepository,
+    @Inject(CONSENT_REPOSITORY)
+    private readonly consentRepository: IConsentRepository,
     private readonly configService: ConfigService,
   ) {}
 
@@ -92,6 +100,12 @@ export class DemoSeedService implements OnModuleInit {
     // A corporate role alone has no company identity, so the overview would
     // have nothing to attribute the figures to.
     await this.ensureCorporate(corporateUser.id);
+
+    // Consent gates aggregation: a farm whose owner has no open carbon_project
+    // grant is not eligible. Without these rows the whole carbon chain would
+    // fail closed and silently, so they are seeded for both demo farmers.
+    await this.ensureConsent(farmerA.id);
+    await this.ensureConsent(farmerB.id);
 
     const farmA1 = await this.ensureFarm(farmerA.id, {
       name: 'Lahan Padi Sawah',
@@ -297,6 +311,27 @@ export class DemoSeedService implements OnModuleInit {
       email,
       role,
       passwordHash: await bcrypt.hash(DEMO_PASSWORD, BCRYPT_ROUNDS),
+    });
+  }
+
+  /**
+   * Grants the carbon project purpose once. Keyed on the open grant, so a
+   * farmer who deliberately revoked it keeps that choice across restarts
+   * instead of being re-granted on every boot.
+   */
+  private async ensureConsent(userId: string): Promise<void> {
+    const open = await this.consentRepository.findOpenByUserAndPurpose(
+      userId,
+      CARBON_PROJECT_PURPOSE,
+    );
+    if (open != null) {
+      return;
+    }
+
+    await this.consentRepository.create({
+      userId,
+      purpose: CARBON_PROJECT_PURPOSE,
+      consentVersion: CONSENT_VERSION,
     });
   }
 
