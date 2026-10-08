@@ -28,7 +28,8 @@ export type EligibilityCriterionKey =
   | 'verification'
   | 'data_completeness'
   | 'eligible_practice'
-  | 'aggregation_suitability';
+  | 'aggregation_suitability'
+  | 'consent';
 
 export type CriterionResult = {
   key: EligibilityCriterionKey;

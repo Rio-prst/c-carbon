@@ -116,6 +116,15 @@ class FakeFarmsService {
   }
 }
 
+class FakeConsentService {
+  /** Consent owners, so a test can revoke one and observe the effect. */
+  revoked = new Set<string>();
+
+  hasActiveCarbonProjectConsent(userId: string): Promise<boolean> {
+    return Promise.resolve(!this.revoked.has(userId));
+  }
+}
+
 function farm(overrides: Partial<FarmRecord> = {}): FarmRecord {
   return {
     id: 'farm-1',
@@ -152,6 +161,7 @@ describe('CarbonProjectService', () => {
   let service: CarbonProjectService;
   let projectRepository: FakeProjectRepository;
   let farmsService: FakeFarmsService;
+  let consentService: FakeConsentService;
   let farmDataRepository: FarmDataRepository;
   let auditLog: AuditLog;
 
@@ -160,6 +170,9 @@ describe('CarbonProjectService', () => {
     for (let i = 1; i <= count; i += 1) {
       const row = farm({
         id: `farm-${i}`,
+        // Distinct owner per farm so a consent test can revoke one owner
+        // without blocking every farm at once.
+        userId: `farmer-${i}`,
         digitalFarmId: `CF-${i}`.padEnd(8, 'A'),
       });
       farmsService.rows.push(row);
@@ -171,6 +184,7 @@ describe('CarbonProjectService', () => {
   beforeEach(() => {
     projectRepository = new FakeProjectRepository([project()]);
     farmsService = new FakeFarmsService();
+    consentService = new FakeConsentService();
     farmDataRepository = new FarmDataRepository();
     auditLog = new AuditLog();
 
@@ -179,6 +193,7 @@ describe('CarbonProjectService', () => {
       new ProjectEligibilityProvider(),
       farmDataRepository,
       farmsService as never,
+      consentService as never,
       auditLog,
     );
   });
@@ -357,6 +372,72 @@ describe('CarbonProjectService', () => {
       await expect(
         service.aggregate(ADMIN_ID, 'does-not-exist'),
       ).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  /**
+   * docs/BUSINESS-RULES.md §11 makes consent a governance boundary. These prove
+   * a withdrawn consent actually changes aggregation rather than only being
+   * recorded.
+   */
+  describe('consent boundary', () => {
+    it('excludes a farm whose owner withdrew consent', async () => {
+      await seedEligibleFarms(4);
+      const target = farmsService.rows[3];
+      consentService.revoked.add(target.userId);
+
+      const result = await service.aggregate(ADMIN_ID, 'project-1');
+
+      expect(result.total_farms).toBe(3);
+      expect(result.eligible_farm_ids).not.toContain(target.id);
+    });
+
+    it('reports the consent shortfall in the error details', async () => {
+      await seedEligibleFarms(3);
+      consentService.revoked.add('farmer-1');
+
+      try {
+        await service.aggregate(ADMIN_ID, 'project-1');
+        throw new Error('should have thrown');
+      } catch (error) {
+        const response = (
+          error as {
+            getResponse(): { details: { blocked_by_missing_consent: number } };
+          }
+        ).getResponse();
+        expect(response.details.blocked_by_missing_consent).toBeGreaterThan(0);
+      }
+    });
+
+    it('fails aggregation when consent leaves too few farms', async () => {
+      await seedEligibleFarms(3);
+      consentService.revoked.add('farmer-1');
+
+      await expect(service.aggregate(ADMIN_ID, 'project-1')).rejects.toThrow(
+        ConflictException,
+      );
+    });
+
+    it('explains consent in the eligible-farm filter', async () => {
+      await seedEligibleFarms(3);
+      consentService.revoked.add('farmer-1');
+
+      const result = await service.listEligibleFarms();
+      const rejected = result.rejected.find((f) => f.farm_id === 'farm-1');
+      const consent = rejected?.criteria.find((c) => c.key === 'consent');
+
+      expect(consent?.passed).toBe(false);
+      expect(consent?.reason).toContain('ditarik');
+    });
+
+    it('counts a farm without consent as not eligible', async () => {
+      await seedEligibleFarms(3);
+      consentService.revoked.add('farmer-1');
+
+      const result = await service.listEligibleFarms();
+
+      expect(result.min_eligible_now).toBe(2);
+      expect(result.eligible.some((f) => f.farm_id === 'farm-1')).toBe(false);
     });
   });
 

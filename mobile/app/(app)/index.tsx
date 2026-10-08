@@ -7,6 +7,7 @@ import {
   Leaf,
   MapPin,
   Sprout,
+  UserRound,
 } from 'lucide-react-native';
 import { Button, Card, Screen, Text } from '../../components';
 import { colors, spacing } from '../../lib/theme';
@@ -141,6 +142,20 @@ export default function HomeScreen() {
           </>
         ) : null}
 
+        <Pressable onPress={() => router.push('/profile')}>
+          <Card style={[styles.actionCard, styles.profileEntry]}>
+            <UserRound size={20} color={colors.brand.forest600} />
+            <View style={styles.actionText}>
+              <Text variant="bodyMedium" color={colors.neutral.ink900}>
+                Profil
+              </Text>
+              <Text variant="caption" color={colors.neutral.ink500}>
+                Data akun dan persetujuan
+              </Text>
+            </View>
+          </Card>
+        </Pressable>
+
         <Button
           label="Log out"
           variant="secondary"
@@ -181,5 +196,8 @@ const styles = StyleSheet.create({
   },
   logout: {
     marginTop: spacing.xxl,
+  },
+  profileEntry: {
+    marginTop: spacing.sm,
   },
 });

@@ -33,6 +33,22 @@ export type CreateEvidenceInput = {
   fileName?: string;
 };
 
+export type EvidenceAssetRecord = {
+  id: string;
+  evidenceId: string;
+  storageKey: string;
+  contentType: string;
+  sizeBytes: number;
+  createdAt: Date;
+};
+
+export type CreateEvidenceAssetInput = {
+  evidenceId: string;
+  storageKey: string;
+  contentType: string;
+  sizeBytes: number;
+};
+
 export type FarmSeasonRecord = {
   id: string;
   farmId: string;
@@ -101,4 +117,8 @@ export interface IEvidenceRepository {
   create(input: CreateEvidenceInput): Promise<EvidenceRecord>;
 
   findByFarmDataId(farmDataId: string): Promise<EvidenceRecord[]>;
+
+  createAsset(input: CreateEvidenceAssetInput): Promise<EvidenceAssetRecord>;
+
+  findAssetsByEvidenceId(evidenceId: string): Promise<EvidenceAssetRecord[]>;
 }

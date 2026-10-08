@@ -15,6 +15,8 @@ import { FarmDataModule } from './farm-data/farm-data.module';
 import { DemoSeedModule } from './demo-seed/demo-seed.module';
 import { CarbonProjectModule } from './carbon-project/carbon-project.module';
 import { CorporateModule } from './corporate/corporate.module';
+import { ConsentModule } from './consent/consent.module';
+import { EvidenceStorageModule } from './evidence-storage/evidence-storage.module';
 import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
 import { RolesGuard } from './auth/guards/roles.guard';
 import { ApiErrorFilter } from './common/api-error.filter';
@@ -35,6 +37,8 @@ import { PrismaModule } from './prisma/prisma.module';
     DemoSeedModule,
     CarbonProjectModule,
     CorporateModule,
+    ConsentModule,
+    EvidenceStorageModule,
   ],
   controllers: [AppController],
   providers: [
