@@ -30,9 +30,10 @@ model User {
   createdAt    DateTime @default(now()) @map("created_at")
   updatedAt    DateTime @updatedAt @map("updated_at")
 
-  farms    Farm[]
+  farms     Farm[]
   corporate Corporate?
-  consents Consent[]
+  consents  Consent[]
+  rewards   RewardEvent[]
 
   @@map("users")
 }
@@ -60,6 +61,7 @@ model EvidenceAsset {
   @@index([evidenceId])
   @@map("evidence_assets")
 }
+
 /// A single grant of permission, per docs/DATABASE.md §12.
 ///
 /// Rows are a history rather than a mutable flag: revoking stamps revoked_at
@@ -115,13 +117,13 @@ model AuditLog {
 /// The breakdown is JSON because FSS is camelCase and CRS is snake_case; a
 /// fixed column set could not hold both without a union of every component.
 model Score {
-  id            String   @id @default(uuid())
-  farmId        String   @map("farm_id")
-  scoreType     String   @map("score_type") @db.VarChar(10)
-  value         Decimal  @db.Decimal(6, 2)
+  id            String    @id @default(uuid())
+  farmId        String    @map("farm_id")
+  scoreType     String    @map("score_type") @db.VarChar(10)
+  value         Decimal   @db.Decimal(6, 2)
   breakdown     Json
-  isProvisional Boolean  @default(true) @map("is_provisional")
-  calculatedAt  DateTime @default(now()) @map("calculated_at")
+  isProvisional Boolean   @default(true) @map("is_provisional")
+  calculatedAt  DateTime  @default(now()) @map("calculated_at")
   supersededAt  DateTime? @map("superseded_at")
 
   farm Farm @relation(fields: [farmId], references: [id], onDelete: Cascade)
@@ -129,6 +131,51 @@ model Score {
   @@unique([farmId, scoreType])
   @@index([farmId])
   @@map("scores")
+}
+
+/// A reward event, per docs/DATABASE.md §8.
+///
+/// Append-only. The running total is not stored on the user; it is the sum of
+/// this table, and `total_points_snapshot` / `tier_snapshot` are frozen at the
+/// moment of the event so history reads back as it looked then rather than
+/// being retroactively rewritten by later awards.
+///
+/// Points are non-financial in MVP, so there is no monetary column and nothing
+/// here is payable.
+model RewardEvent {
+  id                  String   @id @default(uuid())
+  userId              String   @map("user_id")
+  eventType           String   @map("event_type") @db.VarChar(40)
+  points              Int
+  totalPointsSnapshot Int      @map("total_points_snapshot")
+  tierSnapshot        String   @map("tier_snapshot") @db.VarChar(20)
+  description         String?  @db.VarChar(255)
+  createdAt           DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@map("reward_events")
+}
+
+/// A policy recorded against a farm, per docs/DATABASE.md §6.
+///
+/// docs/DATABASE.md §6 specifies farm 1:N insurance, so farm_id is indexed
+/// rather than unique and findByFarmId reads the most recent row. The platform
+/// does not underwrite policies, so this stores what a partner reported rather
+/// than anything underwriting logic depends on.
+model Insurance {
+  id        String   @id @default(uuid())
+  farmId    String   @map("farm_id")
+  partner   String
+  status    String   @db.VarChar(20)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  farm Farm @relation(fields: [farmId], references: [id], onDelete: Cascade)
+
+  @@index([farmId])
+  @@map("insurance")
 }
 
 /// Corporate identity attached one-to-one to a user, per docs/DATABASE.md §11.
@@ -162,11 +209,12 @@ model Farm {
   createdAt     DateTime   @default(now()) @map("created_at")
   updatedAt     DateTime   @updatedAt @map("updated_at")
 
-  user    User         @relation(fields: [userId], references: [id])
-  seasons FarmSeason[]
-  data    FarmData[]
-  projects ProjectFarm[]
-  scores  Score[]
+  user      User          @relation(fields: [userId], references: [id])
+  seasons   FarmSeason[]
+  data      FarmData[]
+  projects  ProjectFarm[]
+  scores    Score[]
+  insurance Insurance[]
 
   @@index([userId])
   @@map("farms")
@@ -229,8 +277,8 @@ model Evidence {
   fileName   String?  @map("file_name") @db.VarChar(255)
   uploadedAt DateTime @default(now()) @map("uploaded_at")
 
-  farmData FarmData @relation(fields: [farmDataId], references: [id], onDelete: Cascade)
-  assets  EvidenceAsset[]
+  farmData FarmData        @relation(fields: [farmDataId], references: [id], onDelete: Cascade)
+  assets   EvidenceAsset[]
 
   @@index([farmDataId])
   @@map("evidence")

@@ -10,8 +10,11 @@ import {
   type IFarmSeasonRepository,
 } from '../farm-data/farm-data.repository.interface';
 import { FarmDataStatus } from '../farm-data/farm-data.repository.interface';
-import { INSURANCE_REPOSITORY } from '../insurance/insurance.repository';
-import type { IInsuranceRepository } from '../insurance/insurance.repository';
+import { INSURANCE_REPOSITORY } from '../insurance/insurance.repository.interface';
+import type {
+  IInsuranceRepository,
+  InsuranceStatus,
+} from '../insurance/insurance.repository.interface';
 import { CORPORATE_REPOSITORY } from '../corporate/corporate.repository.interface';
 import type { ICorporateRepository } from '../corporate/corporate.repository.interface';
 import {
@@ -36,10 +39,10 @@ const BCRYPT_ROUNDS = 10;
  * Deterministic demo fixtures, so a competition demo never depends on
  * hand-typed data or on data that survived from an earlier run.
  *
- * Only users and farms live in Postgres today, so this runs on boot rather
- * than as a `prisma db seed`. That is a stopgap: when farm data, scores,
- * insurance and rewards move to Prisma this should become a real seed
- * script and a fixture set, not startup code.
+ * Every fixture now lives in Postgres, so this could be a `prisma db seed`
+ * run with a fixture set instead of startup code. It is still startup code
+ * because moving it is not what this change is about, and it is idempotent so
+ * repeated boots do not accumulate rows.
  */
 @Injectable()
 export class DemoSeedService implements OnModuleInit {
@@ -155,21 +158,9 @@ export class DemoSeedService implements OnModuleInit {
       commodity: 'Karet',
     });
 
-    await this.insuranceRepository.create({
-      farmId: farmA1.id,
-      partner: 'PT Asuransi Tani',
-      status: 'ACTIVE',
-    });
-    await this.insuranceRepository.create({
-      farmId: farmA2.id,
-      partner: 'PT Asuransi Tani',
-      status: 'PENDING',
-    });
-    await this.insuranceRepository.create({
-      farmId: farmB1.id,
-      partner: 'PT Sejahtera Tani',
-      status: 'EXPIRED',
-    });
+    await this.ensureInsurance(farmA1.id, 'PT Asuransi Tani', 'ACTIVE');
+    await this.ensureInsurance(farmA2.id, 'PT Asuransi Tani', 'PENDING');
+    await this.ensureInsurance(farmB1.id, 'PT Sejahtera Tani', 'EXPIRED');
 
     // Farmer A already has a verified season, so the demo shows a populated
     // score and a high readiness instead of empty states everywhere.
@@ -384,6 +375,36 @@ export class DemoSeedService implements OnModuleInit {
       startDate: new Date('2025-10-01'),
       endDate: new Date('2026-03-31'),
     });
+  }
+
+  /**
+   * Idempotent, unlike the farms and seasons above it.
+   *
+   * Insurance used to be seeded with three bare `create` calls. That was
+   * invisible while the repository was a Map keyed by farm, because a repeat
+   * write overwrote the same key. Once it became a real table with a plain
+   * index on farm_id, every boot appended three more rows, so a restart
+   * accumulated duplicate policies.
+   *
+   * Matches on partner and status rather than returning whatever is newest, so
+   * a farm that legitimately has two policies from the same partner with
+   * different statuses still gets exactly one seeded row of each.
+   */
+  private async ensureInsurance(
+    farmId: string,
+    partner: string,
+    status: InsuranceStatus,
+  ) {
+    const existing = await this.insuranceRepository.findByFarmId(farmId);
+    if (
+      existing != null &&
+      existing.partner === partner &&
+      existing.status === status
+    ) {
+      return existing;
+    }
+
+    return this.insuranceRepository.create({ farmId, partner, status });
   }
 }
 
