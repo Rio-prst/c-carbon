@@ -14,9 +14,10 @@ import {
 import { FarmsModule } from '../farms/farms.module';
 import { ScoringModule } from '../scoring/scoring.module';
 import { RewardModule } from '../rewards/reward.module';
+import { EvidenceStorageModule } from '../evidence-storage/evidence-storage.module';
 
 @Module({
-  imports: [FarmsModule, ScoringModule, RewardModule],
+  imports: [FarmsModule, ScoringModule, RewardModule, EvidenceStorageModule],
   controllers: [FarmDataController, EvidenceController],
   providers: [
     FarmDataService,
