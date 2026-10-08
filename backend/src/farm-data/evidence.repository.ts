@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { randomUUID } from 'node:crypto';
+import { PrismaService } from '../prisma/prisma.service';
 import type {
   CreateEvidenceAssetInput,
   CreateEvidenceInput,
@@ -8,53 +8,109 @@ import type {
   IEvidenceRepository,
 } from './farm-data.repository.interface';
 
+const evidenceSelect = {
+  id: true,
+  farmDataId: true,
+  type: true,
+  url: true,
+  fileName: true,
+  uploadedAt: true,
+} as const;
+
+const assetSelect = {
+  id: true,
+  evidenceId: true,
+  storageKey: true,
+  contentType: true,
+  sizeBytes: true,
+  createdAt: true,
+} as const;
+
+type EvidenceRow = {
+  id: string;
+  farmDataId: string;
+  type: string | null;
+  url: string | null;
+  fileName: string | null;
+  uploadedAt: Date;
+};
+
+type AssetRow = {
+  id: string;
+  evidenceId: string;
+  storageKey: string;
+  contentType: string;
+  sizeBytes: number;
+  createdAt: Date;
+};
+
+function toEvidenceRecord(row: EvidenceRow): EvidenceRecord {
+  return {
+    id: row.id,
+    farmDataId: row.farmDataId,
+    type: row.type ?? undefined,
+    url: row.url ?? undefined,
+    fileName: row.fileName ?? undefined,
+    uploadedAt: row.uploadedAt,
+  };
+}
+
+function toAssetRecord(row: AssetRow): EvidenceAssetRecord {
+  return { ...row };
+}
+
 /**
- * In-memory for MVP. The asset rows are metadata only; the bytes live in object
- * storage, so a restart loses which file belonged to which submission but not
- * the file itself. Persisting both together is open work.
+ * Evidence rows live in Postgres rather than in a Map.
+ *
+ * The file bytes are in object storage, so an in-memory repository left the
+ * stored file unreachable: after a restart the reviewer still saw a count but
+ * every link resolved to nothing. Persisting the row alongside the asset keeps
+ * the two together.
  */
 @Injectable()
 export class EvidenceRepository implements IEvidenceRepository {
-  private evidenceMap: Map<string, EvidenceRecord> = new Map();
-  private assetMap: Map<string, EvidenceAssetRecord[]> = new Map();
+  constructor(private readonly prisma: PrismaService) {}
 
-  create(input: CreateEvidenceInput): Promise<EvidenceRecord> {
-    const evidence: EvidenceRecord = {
-      id: randomUUID(),
-      farmDataId: input.farmDataId,
-      type: input.type,
-      url: input.url,
-      fileName: input.fileName,
-      uploadedAt: new Date(),
-    };
-    this.evidenceMap.set(evidence.id, evidence);
-    return Promise.resolve(evidence);
+  async create(input: CreateEvidenceInput): Promise<EvidenceRecord> {
+    const row = await this.prisma.evidence.create({
+      data: {
+        farmDataId: input.farmDataId,
+        type: input.type,
+        url: input.url,
+        fileName: input.fileName,
+      },
+      select: evidenceSelect,
+    });
+    return toEvidenceRecord(row);
   }
 
-  findByFarmDataId(farmDataId: string): Promise<EvidenceRecord[]> {
-    return Promise.resolve(
-      Array.from(this.evidenceMap.values()).filter(
-        (e) => e.farmDataId === farmDataId,
-      ),
-    );
+  async findByFarmDataId(farmDataId: string): Promise<EvidenceRecord[]> {
+    const rows = await this.prisma.evidence.findMany({
+      where: { farmDataId },
+      orderBy: { uploadedAt: 'asc' },
+      select: evidenceSelect,
+    });
+    return rows.map(toEvidenceRecord);
   }
 
-  createAsset(input: CreateEvidenceAssetInput): Promise<EvidenceAssetRecord> {
-    const asset: EvidenceAssetRecord = {
-      id: randomUUID(),
-      evidenceId: input.evidenceId,
-      storageKey: input.storageKey,
-      contentType: input.contentType,
-      sizeBytes: input.sizeBytes,
-      createdAt: new Date(),
-    };
-    const existing = this.assetMap.get(input.evidenceId) ?? [];
-    existing.push(asset);
-    this.assetMap.set(input.evidenceId, existing);
-    return Promise.resolve(asset);
+  async createAsset(
+    input: CreateEvidenceAssetInput,
+  ): Promise<EvidenceAssetRecord> {
+    const row = await this.prisma.evidenceAsset.create({
+      data: input,
+      select: assetSelect,
+    });
+    return toAssetRecord(row);
   }
 
-  findAssetsByEvidenceId(evidenceId: string): Promise<EvidenceAssetRecord[]> {
-    return Promise.resolve(this.assetMap.get(evidenceId) ?? []);
+  async findAssetsByEvidenceId(
+    evidenceId: string,
+  ): Promise<EvidenceAssetRecord[]> {
+    const rows = await this.prisma.evidenceAsset.findMany({
+      where: { evidenceId },
+      orderBy: { createdAt: 'asc' },
+      select: assetSelect,
+    });
+    return rows.map(toAssetRecord);
   }
 }

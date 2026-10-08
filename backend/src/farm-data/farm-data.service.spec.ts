@@ -1,8 +1,10 @@
+import {
+  InMemoryFarmDataRepository,
+  InMemoryFarmSeasonRepository,
+} from '../testing/in-memory-farm-data.repository';
 import { jest } from '@jest/globals';
 import type { JwtPayload } from '../auth/types/jwt-payload';
 import { FarmDataService } from './farm-data.service';
-import { FarmDataRepository } from './farm-data.repository';
-import { FarmSeasonRepository } from './farm-season.repository';
 import type { FarmSeasonRecord } from './farm-data.repository.interface';
 
 type AsyncMock = jest.Mock<() => Promise<unknown>>;
@@ -18,8 +20,8 @@ const farmsService = {
 
 describe('FarmDataService', () => {
   let service: FarmDataService;
-  let dataRepo: FarmDataRepository;
-  let seasonRepo: FarmSeasonRepository;
+  let dataRepo: InMemoryFarmDataRepository;
+  let seasonRepo: InMemoryFarmSeasonRepository;
   let scoring: { recalculateFromFarmData: AsyncMock };
   let rewards: { awardEvent: AsyncMock };
 
@@ -31,8 +33,8 @@ describe('FarmDataService', () => {
 
   beforeEach(() => {
     farmsService.resolveAccess.mockResolvedValue(farm);
-    dataRepo = new FarmDataRepository();
-    seasonRepo = new FarmSeasonRepository();
+    dataRepo = new InMemoryFarmDataRepository();
+    seasonRepo = new InMemoryFarmSeasonRepository();
     scoring = {
       recalculateFromFarmData: jest.fn<() => Promise<unknown>>(),
     };

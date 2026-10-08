@@ -1,9 +1,11 @@
+import {
+  InMemoryFarmDataRepository,
+  InMemoryEvidenceRepository,
+} from '../testing/in-memory-farm-data.repository';
 import { NotFoundException } from '@nestjs/common';
 import { describe, expect, it, beforeEach, jest } from '@jest/globals';
 import type { JwtPayload } from '../auth/types/jwt-payload';
 import { EvidenceService } from './evidence.service';
-import { EvidenceRepository } from './evidence.repository';
-import { FarmDataRepository } from './farm-data.repository';
 
 const OWNER: JwtPayload = { sub: 'farmer-1', role: 'FARMER' };
 const OTHER: JwtPayload = { sub: 'farmer-2', role: 'FARMER' };
@@ -47,8 +49,8 @@ const storage = {
   },
 };
 
-async function seed(): Promise<FarmDataRepository> {
-  const repository = new FarmDataRepository();
+async function seed(): Promise<InMemoryFarmDataRepository> {
+  const repository = new InMemoryFarmDataRepository();
   await repository.create({
     farmId: FARM_ID,
     farmSeasonId: 'season-1',
@@ -58,13 +60,13 @@ async function seed(): Promise<FarmDataRepository> {
 }
 
 describe('EvidenceService', () => {
-  let dataRepository: FarmDataRepository;
-  let evidenceRepository: EvidenceRepository;
+  let dataRepository: InMemoryFarmDataRepository;
+  let evidenceRepository: InMemoryEvidenceRepository;
   let service: EvidenceService;
 
   beforeEach(async () => {
     dataRepository = await seed();
-    evidenceRepository = new EvidenceRepository();
+    evidenceRepository = new InMemoryEvidenceRepository();
     farmsService.resolveAccess.mockReset();
     farmsService.resolveAccess.mockResolvedValue(undefined);
     storage.uploaded = [];
@@ -148,8 +150,8 @@ describe('EvidenceService', () => {
 });
 
 describe('EvidenceService file upload', () => {
-  let dataRepository: FarmDataRepository;
-  let evidenceRepository: EvidenceRepository;
+  let dataRepository: InMemoryFarmDataRepository;
+  let evidenceRepository: InMemoryEvidenceRepository;
   let service: EvidenceService;
 
   const pngBytes = Buffer.from(
@@ -164,7 +166,7 @@ describe('EvidenceService file upload', () => {
 
   beforeEach(async () => {
     dataRepository = await seed();
-    evidenceRepository = new EvidenceRepository();
+    evidenceRepository = new InMemoryEvidenceRepository();
     farmsService.resolveAccess.mockReset();
     farmsService.resolveAccess.mockResolvedValue(undefined);
     storage.uploaded = [];

@@ -1,9 +1,15 @@
+import type {
+  IEvidenceRepository,
+  IFarmDataRepository,
+} from '../farm-data/farm-data.repository.interface';
+import {
+  InMemoryFarmDataRepository,
+  InMemoryEvidenceRepository,
+} from '../testing/in-memory-farm-data.repository';
 import { jest } from '@jest/globals';
 import type { JwtPayload } from '../auth/types/jwt-payload';
 import { ReadinessService } from './readiness.service';
 import { CRSService } from './crs.service';
-import { FarmDataRepository } from '../farm-data/farm-data.repository';
-import { EvidenceRepository } from '../farm-data/evidence.repository';
 import { ScoreRepository } from '../scoring/score.repository';
 import type { FarmDataRecord } from '../farm-data/farm-data.repository.interface';
 import type { CRSResult, ICRSService } from './crs.service.interface';
@@ -42,8 +48,8 @@ function result(overrides: Partial<CRSResult> = {}): CRSResult {
 
 describe('ReadinessService', () => {
   let service: ReadinessService;
-  let dataRepository: FarmDataRepository;
-  let evidenceRepository: EvidenceRepository;
+  let dataRepository: IFarmDataRepository;
+  let evidenceRepository: IEvidenceRepository;
   let scoreRepository: ScoreRepository;
   let crsService: CRSService;
   let calculateCRS: jest.SpiedFunction<ICRSService['calculateCRS']>;
@@ -54,8 +60,8 @@ describe('ReadinessService', () => {
   };
 
   beforeEach(() => {
-    dataRepository = new FarmDataRepository();
-    evidenceRepository = new EvidenceRepository();
+    dataRepository = new InMemoryFarmDataRepository();
+    evidenceRepository = new InMemoryEvidenceRepository();
     scoreRepository = new ScoreRepository();
     crsService = new CRSService({
       isProvisional: true,

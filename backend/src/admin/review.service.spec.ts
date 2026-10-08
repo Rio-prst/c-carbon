@@ -1,9 +1,15 @@
+import type {
+  IEvidenceRepository,
+  IFarmDataRepository,
+} from '../farm-data/farm-data.repository.interface';
+import {
+  InMemoryFarmDataRepository,
+  InMemoryEvidenceRepository,
+} from '../testing/in-memory-farm-data.repository';
 import { jest } from '@jest/globals';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { ReviewService } from './review.service';
 import { AuditLog } from './audit-log.service';
-import { FarmDataRepository } from '../farm-data/farm-data.repository';
-import { EvidenceRepository } from '../farm-data/evidence.repository';
 import type { FarmDataRecord } from '../farm-data/farm-data.repository.interface';
 
 const OWNER_ID = 'farmer-1';
@@ -12,8 +18,8 @@ const ADMIN_ID = 'admin-1';
 describe('ReviewService', () => {
   let service: ReviewService;
   let auditLog: AuditLog;
-  let dataRepo: FarmDataRepository;
-  let evidenceRepo: EvidenceRepository;
+  let dataRepo: IFarmDataRepository;
+  let evidenceRepo: IEvidenceRepository;
 
   const farmsService = {
     findByIdForAdmin: jest.fn<() => Promise<unknown>>(),
@@ -61,8 +67,8 @@ describe('ReviewService', () => {
   }
 
   beforeEach(() => {
-    dataRepo = new FarmDataRepository();
-    evidenceRepo = new EvidenceRepository();
+    dataRepo = new InMemoryFarmDataRepository();
+    evidenceRepo = new InMemoryEvidenceRepository();
     auditLog = new AuditLog();
 
     farmsService.findByIdForAdmin.mockResolvedValue(FARM);
