@@ -6,6 +6,13 @@ Base:
 No global prefix is set by the backend, so paths are absolute. If the app is
 mounted behind one, prefix them all.
 
+Field naming:
+Request bodies are camelCase, without exception. Note the one place that
+breaks this: `POST /rewards/events` takes `user_id` and `event_type` in
+snake_case, which is inconsistent with every other DTO and with the mobile
+client's field names. It is documented here as implemented, not as it should
+be.
+
 Authentication:
 ```http
 Authorization: Bearer <JWT>
@@ -75,6 +82,20 @@ The token lifetime is configured with `JWT_EXPIRES_IN`.
 
 Returns the authenticated user.
 
+Response:
+```json
+{
+  "id": "string",
+  "name": "string",
+  "email": "string",
+  "role": "FARMER",
+  "createdAt": "iso"
+}
+```
+
+Note the shape differs from `/auth/login` and `/auth/register`: the user is
+returned flat here, and nested under `user` there.
+
 ## Farms
 
 ### GET `/farms`
@@ -89,7 +110,7 @@ Request:
   "name": "string",
   "lat": 0,
   "lng": 0,
-  "land_area_ha": 0,
+  "landAreaHa": 0,
   "commodity": "string"
 }
 ```
@@ -125,15 +146,15 @@ Submit data for a season.
 Request:
 ```json
 {
-  "farm_season_id": "string",
-  "yield_kg": 0,
-  "water_usage": 0,
-  "fertilizer_usage": 0,
-  "pesticide_usage": 0,
-  "energy_usage": 0,
-  "waste_management_practice": "string",
-  "soil_practice": "string",
-  "low_carbon_practice": true
+  "farmSeasonId": "string",
+  "yieldKg": 0,
+  "waterUsage": 0,
+  "fertilizerUsage": 0,
+  "pesticideUsage": 0,
+  "energyUsage": 0,
+  "wasteManagementPractice": "string",
+  "soilPractice": "string",
+  "lowCarbonPractice": true
 }
 ```
 
@@ -148,7 +169,7 @@ Submission history for the farm.
 ### PATCH `/farms/:farmId/data/:id/status`
 
 ```json
-{ "status": "VERIFIED", "rejection_reason": "required when REJECTED" }
+{ "status": "VERIFIED", "rejectionReason": "required when REJECTED" }
 ```
 
 Transitions: `SELF_REPORTED -> REVIEW -> VERIFIED`, or `-> REJECTED`. Rejecting
@@ -157,8 +178,8 @@ requires a reason, and a reason is cleared when the status moves away from
 
 ### POST `/farms/:farmId/data/seasons`
 
-Creates a season. Request: `{ "season_label": "string", "start_date": "date",
-"end_date": "date", "sequence_number": 0 }`. All fields are optional.
+Creates a season. Request: `{ "seasonLabel": "string", "startDate": "date",
+"endDate": "date", "sequenceNumber": 0 }`. All fields are optional.
 
 ### GET `/farms/:farmId/data/seasons`
 
@@ -171,7 +192,7 @@ Seasons for the farm.
 Records a reference only:
 
 ```json
-{ "farm_data_id": "string", "type": "FIELD_PHOTO", "file_name": "string", "url": "string" }
+{ "farmDataId": "string", "type": "FIELD_PHOTO", "fileName": "string", "url": "string" }
 ```
 
 ### GET `/farms/:farmId/evidence/:farmDataId`
@@ -445,3 +466,6 @@ Every lifecycle change writes an audit entry.
 - Scoring has no history. `scores` stores one row per farm and score type, so a
   score chart is not possible. `superseded_at` is present in anticipation, but
   nothing writes it. `MVP-SCOPE.md` places score history charts in P1/P2.
+- There is a `CreateInsuranceDto` with `partner` and `status`, but no route uses
+  it. Insurance is read-only in the MVP, which matches `docs/DATABASE.md` §8, so
+  the DTO is currently dead code rather than a missing endpoint.
