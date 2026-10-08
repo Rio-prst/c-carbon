@@ -32,8 +32,53 @@ model User {
 
   farms    Farm[]
   corporate Corporate?
+  consents Consent[]
 
   @@map("users")
+}
+
+/// The bytes of an uploaded evidence file.
+///
+/// Separate from `evidence` on purpose: that table is the existing contract the
+/// mobile client already uses, and it predates any storage backend. Keeping the
+/// file reference here means a file can be stored and served without changing
+/// what an Evidence record means to existing callers.
+///
+/// storage_key is an opaque key inside the bucket. It is never a public URL, and
+/// a file is only reachable through a short-lived signed link issued after an
+/// ownership check, because evidence is personal farmer data.
+model EvidenceAsset {
+  id          String   @id @default(uuid())
+  evidenceId  String   @map("evidence_id")
+  storageKey  String   @unique @map("storage_key")
+  contentType String   @map("content_type") @db.VarChar(100)
+  sizeBytes   Int      @map("size_bytes")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  evidence Evidence @relation(fields: [evidenceId], references: [id], onDelete: Cascade)
+
+  @@index([evidenceId])
+  @@map("evidence_assets")
+}
+/// A single grant of permission, per docs/DATABASE.md §12.
+///
+/// Rows are a history rather than a mutable flag: revoking stamps revoked_at
+/// on the open row instead of deleting it, so a withdrawal stays on record.
+/// The latest non-revoked row per (user, purpose) is the effective state.
+model Consent {
+  id             String    @id @default(uuid())
+  userId         String    @map("user_id")
+  purpose        String    @db.VarChar(50)
+  consentVersion String    @map("consent_version") @db.VarChar(20)
+  grantedAt      DateTime  @default(now()) @map("granted_at")
+  revokedAt      DateTime? @map("revoked_at")
+  createdAt      DateTime  @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([userId, purpose])
+  @@map("consents")
 }
 
 /// Corporate identity attached one-to-one to a user, per docs/DATABASE.md §11.
@@ -134,6 +179,7 @@ model Evidence {
   uploadedAt DateTime @default(now()) @map("uploaded_at")
 
   farmData FarmData @relation(fields: [farmDataId], references: [id], onDelete: Cascade)
+  assets  EvidenceAsset[]
 
   @@index([farmDataId])
   @@map("evidence")
