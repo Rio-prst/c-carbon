@@ -81,6 +81,29 @@ model Consent {
   @@map("consents")
 }
 
+/// Append-only record of sensitive actions, per docs/DATABASE.md §13.
+///
+/// docs/ERD.md describes a single `metadata` JSON column; this keeps farm_id and
+/// details separate instead. The reason is that admin review already reads the
+/// log filtered by farm, and a separate column keeps that a plain index scan
+/// rather than a JSON expression. The six call sites also stay unchanged.
+model AuditLog {
+  id           String   @id @default(uuid())
+  actorUserId  String   @map("actor_user_id")
+  action       String   @db.VarChar(50)
+  targetEntity String   @map("target_entity") @db.VarChar(50)
+  targetId     String   @map("target_id")
+  /// Absent for project lifecycle actions: a project spans many farms.
+  farmId       String?  @map("farm_id")
+  details      String?
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  @@index([actorUserId])
+  @@index([farmId])
+  @@index([targetEntity, targetId])
+  @@map("audit_logs")
+}
+
 /// Corporate identity attached one-to-one to a user, per docs/DATABASE.md §11.
 /// Registration only creates farmers, so this row is provisioned separately;
 /// the demo seed is the MVP path.

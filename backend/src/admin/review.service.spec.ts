@@ -1,3 +1,4 @@
+import { InMemoryAuditLogRepository } from '../testing/in-memory-audit-log.repository';
 import type {
   IEvidenceRepository,
   IFarmDataRepository,
@@ -69,7 +70,7 @@ describe('ReviewService', () => {
   beforeEach(() => {
     dataRepo = new InMemoryFarmDataRepository();
     evidenceRepo = new InMemoryEvidenceRepository();
-    auditLog = new AuditLog();
+    auditLog = new AuditLog(new InMemoryAuditLogRepository());
 
     farmsService.findByIdForAdmin.mockResolvedValue(FARM);
     scoring.recalculateFromFarmData.mockResolvedValue(undefined);
