@@ -1,4 +1,4 @@
-import { apiRequest } from '../lib/api';
+import { apiRequest, apiUpload } from '../lib/api';
 import type {
   CreateSeasonInput,
   Evidence,
@@ -59,4 +59,26 @@ export function addEvidence(
     body: input,
     token,
   });
+}
+
+/**
+ * Uploads the file itself, not just its name.
+ *
+ * React Native's FormData accepts the local file shape directly, so the bytes
+ * are streamed by the runtime rather than read into memory and base64 encoded.
+ */
+export function uploadEvidenceFile(
+  farmId: string,
+  farmDataId: string,
+  file: { uri: string; name: string; type: string },
+  token: string,
+): Promise<Evidence> {
+  const form = new FormData();
+  form.append('file', file as unknown as Blob);
+
+  return apiUpload<Evidence>(
+    `/farms/${farmId}/evidence/${farmDataId}/upload`,
+    form,
+    token,
+  );
 }

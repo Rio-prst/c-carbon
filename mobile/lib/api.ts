@@ -41,13 +41,48 @@ export async function apiRequest<T>(
     headers.Authorization = `Bearer ${token}`;
   }
 
+  return send<T>(`${API_BASE_URL}${path}`, {
+    method,
+    headers,
+    body: body !== undefined ? JSON.stringify(body) : undefined,
+  });
+}
+
+/**
+ * Multipart upload.
+ *
+ * Content-Type is deliberately left unset so the runtime can add the multipart
+ * boundary. Setting application/json by hand, as apiRequest does, makes the
+ * server unable to parse the file at all.
+ */
+export async function apiUpload<T>(
+  path: string,
+  form: FormData,
+  token: string,
+): Promise<T> {
+  const headers: Record<string, string> = {};
+  if (token) {
+    headers.Authorization = `Bearer ${token}`;
+  }
+
+  return send<T>(`${API_BASE_URL}${path}`, {
+    method: 'POST',
+    headers,
+    body: form,
+  });
+}
+
+async function send<T>(
+  url: string,
+  init: {
+    method: string;
+    headers: Record<string, string>;
+    body?: BodyInit;
+  },
+): Promise<T> {
   let response: Response;
   try {
-    response = await fetch(`${API_BASE_URL}${path}`, {
-      method,
-      headers,
-      body: body !== undefined ? JSON.stringify(body) : undefined,
-    });
+    response = await fetch(url, init);
   } catch {
     throw new ApiClientError({
       statusCode: 0,

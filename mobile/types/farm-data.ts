@@ -39,6 +39,14 @@ export type Evidence = {
   url?: string;
   fileName?: string;
   uploadedAt: string;
+  /**
+   * Short-lived link to the stored file, issued per read. Absent when the
+   * record predates file storage or the file could not be read, so the UI must
+   * treat it as optional rather than assuming every entry is openable.
+   */
+  downloadUrl?: string;
+  sizeBytes?: number;
+  contentType?: string;
 };
 
 export type CreateSeasonInput = {

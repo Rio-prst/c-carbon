@@ -19,6 +19,7 @@ import {
 import { colors, spacing } from '../../../../../lib/theme';
 import {
   addEvidence,
+  uploadEvidenceFile,
   getSeasons,
   submitData,
 } from '../../../../../services/farm-data';
@@ -54,6 +55,43 @@ const SEASON_OPTIONS = (seasons: FarmSeason[] | null) =>
     value: season.id,
     label: season.seasonLabel ?? `Musim ${season.sequenceNumber ?? '-'}`,
   }));
+
+/**
+ * Uploads the bytes when a local file is available.
+ *
+ * Falls back to recording the name alone when the picker could not produce a
+ * local uri, because that is what the older flow did and losing the attachment
+ * entirely would be worse than an unopenable record. Resolves to null on success
+ * or the failure message, never throws, so one bad file cannot lose the whole
+ * submission.
+ */
+async function uploadEvidenceItem(
+  farmId: string,
+  farmDataId: string,
+  item: PickedEvidence,
+  token: string,
+): Promise<string | null> {
+  try {
+    if (item.localUri != null && item.localUri !== '') {
+      await uploadEvidenceFile(
+        farmId,
+        farmDataId,
+        {
+          uri: item.localUri,
+          name: item.fileName,
+          type: item.mimeType ?? 'application/octet-stream',
+        },
+        token,
+      );
+      return null;
+    }
+
+    await addEvidence(farmId, { farmDataId, type: item.type, fileName: item.fileName }, token);
+    return null;
+  } catch (err: unknown) {
+    return err instanceof Error ? err.message : 'Gagal melampirkan bukti';
+  }
+}
 
 function parseOptionalNumber(value: string): number | null {
   const trimmed = value.trim();
@@ -163,15 +201,7 @@ export default function SubmitFarmDataScreen() {
       if (evidence.length > 0) {
         const failed = await Promise.all(
           evidence.map((item) =>
-            addEvidence(
-              id,
-              { farmDataId: created.id, type: item.type, fileName: item.fileName },
-              token,
-            ).then(
-              () => null,
-              (err: unknown) =>
-                err instanceof Error ? err.message : 'Gagal melampirkan bukti',
-            ),
+            uploadEvidenceItem(id, created.id, item, token),
           ),
         ).then((results) => results.filter((item): item is string => item != null));
 

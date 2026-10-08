@@ -16,9 +16,11 @@ export function evidenceTypeLabel(value?: string): string {
 }
 
 /**
- * A local `file://` uri is not shareable, so it is kept for the in-session
- * preview only and never uploaded as `url`: another reviewer would only get a
- * broken link. MVP records the file name and type as the evidence reference.
+ * A picked file.
+ *
+ * `localUri` points at the file on the device and is used to upload the bytes.
+ * It is never sent as `url`: a `file://` uri means nothing to a reviewer on
+ * another device, and the server issues its own short-lived link instead.
  */
 export type PickedEvidence = {
   fileName: string;
@@ -46,7 +48,14 @@ export function toPickedEvidence(
   return {
     fileName: nameFromUri(asset.uri, fileName),
     type: isImage ? 'FIELD_PHOTO' : 'OTHER',
-    localUri: isImage ? asset.uri : undefined,
+    // Kept for documents too, not only images: a PDF needs its bytes uploaded
+    // just as much as a photo does.
+    localUri: asset.uri,
     mimeType: asset.mimeType ?? undefined,
   };
+}
+
+/** MIME type sent with the upload, matching what the server accepts. */
+export function uploadMimeType(picked: PickedEvidence): string | undefined {
+  return picked.mimeType;
 }

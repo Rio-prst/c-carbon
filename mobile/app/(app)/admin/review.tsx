@@ -1,6 +1,6 @@
 import { router } from 'expo-router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { RefreshControl, StyleSheet, View } from 'react-native';
+import { RefreshControl, Linking, Pressable, StyleSheet, View } from 'react-native';
 import { AlertTriangle, ClipboardCheck, Inbox, Paperclip } from 'lucide-react-native';
 import {
   Button,
@@ -26,8 +26,10 @@ import {
   rejectFarmData,
   verifyFarmData,
 } from '../../../services/admin';
+import { getEvidence } from '../../../services/farm-data';
 import { useAuth } from '../../../store/auth';
 import type { ReviewQueueItem } from '../../../types/admin';
+import type { Evidence } from '../../../types/farm-data';
 
 const FILTERS: { value: QueueFilter; label: string }[] = [
   { value: 'ALL', label: 'Semua' },
@@ -47,6 +49,56 @@ export default function AdminReviewScreen() {
   const [rejectingId, setRejectingId] = useState<string | null>(null);
   const [reason, setReason] = useState('');
   const [actionError, setActionError] = useState<string | null>(null);
+  const [expandedEvidence, setExpandedEvidence] = useState<
+    Record<string, Evidence[]>
+  >({});
+  const [loadingEvidenceFor, setLoadingEvidenceFor] = useState<string | null>(
+    null,
+  );
+
+  /**
+   * Fetched on demand rather than with the queue, so opening the review screen
+   * does not request a signed link for every submission before anyone asks.
+   * Each link is short lived, so it must be refetched rather than cached long.
+   */
+  const onOpenEvidence = async (item: ReviewQueueItem) => {
+    if (!token) return;
+    const key = item.id;
+    if (expandedEvidence[key] != null) {
+      setExpandedEvidence((prev) => {
+        const next = { ...prev };
+        delete next[key];
+        return next;
+      });
+      return;
+    }
+
+    setLoadingEvidenceFor(key);
+    setActionError(null);
+    try {
+      // Admin reaches a farmer's farm through the review queue, so farmId comes
+      // from the queue item rather than a route the admin navigated to.
+      const files = await getEvidence(item.farmId, key, token);
+      setExpandedEvidence((prev) => ({ ...prev, [key]: files }));
+    } catch (err: unknown) {
+      setActionError(
+        err instanceof Error ? err.message : 'Gagal memuat bukti dukung.',
+      );
+    } finally {
+      setLoadingEvidenceFor(null);
+    }
+  };
+
+  const onOpenFile = async (file: Evidence) => {
+    if (file.downloadUrl == null) {
+      return;
+    }
+    try {
+      await Linking.openURL(file.downloadUrl);
+    } catch {
+      setActionError('Tidak bisa membuka berkas bukti.');
+    }
+  };
 
   const load = useCallback(async () => {
     if (!token) return;
@@ -260,20 +312,70 @@ export default function AdminReviewScreen() {
                 </Text>
               </View>
 
-              <View style={styles.evidence}>
-                <Paperclip
-                  size={16}
-                  strokeWidth={2}
-                  color={
-                    item.evidenceCount > 0
-                      ? colors.brand.forest600
-                      : colors.neutral.ink500
-                  }
-                />
-                <Text variant="caption" color={colors.neutral.ink500}>
-                  {note ?? `${item.evidenceCount} bukti dukung`}
-                </Text>
-              </View>
+              <Pressable
+                onPress={() => void onOpenEvidence(item)}
+                disabled={loadingEvidenceFor === item.id}
+              >
+                <View style={styles.evidence}>
+                  <Paperclip
+                    size={16}
+                    strokeWidth={2}
+                    color={
+                      item.evidenceCount > 0
+                        ? colors.brand.forest600
+                        : colors.neutral.ink500
+                    }
+                  />
+                  <Text
+                    variant="caption"
+                    color={
+                      item.evidenceCount > 0
+                        ? colors.brand.forest600
+                        : colors.neutral.ink500
+                    }
+                  >
+                    {loadingEvidenceFor === item.id
+                      ? 'Memuat bukti...'
+                      : (note ?? `${item.evidenceCount} bukti dukung - buka`)}
+                  </Text>
+                </View>
+              </Pressable>
+
+              {expandedEvidence[item.id] != null ? (
+                <View style={styles.evidenceList}>
+                  {expandedEvidence[item.id]!.length === 0 ? (
+                    <Text variant="caption" color={colors.neutral.ink500}>
+                      Tidak ada berkas tersimpan untuk data ini.
+                    </Text>
+                  ) : (
+                    expandedEvidence[item.id]!.map((file) => (
+                      <Pressable
+                        key={file.id}
+                        onPress={() => void onOpenFile(file)}
+                        disabled={file.downloadUrl == null}
+                      >
+                        <View style={styles.evidenceRow}>
+                          <Text
+                            variant="caption"
+                            color={
+                              file.downloadUrl == null
+                                ? colors.neutral.ink500
+                                : colors.brand.forest600
+                            }
+                          >
+                            {file.fileName ?? 'Bukti'}
+                          </Text>
+                          <Text variant="caption" color={colors.neutral.ink500}>
+                            {file.downloadUrl == null
+                              ? 'tidak bisa dibuka'
+                              : 'buka'}
+                          </Text>
+                        </View>
+                      </Pressable>
+                    ))
+                  )}
+                </View>
+              ) : null}
 
               {rejecting ? (
                 <View style={styles.rejectBox}>
@@ -371,6 +473,17 @@ const styles = StyleSheet.create({
   evidence: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: spacing.sm,
+  },
+  evidenceList: {
+    gap: spacing.xs,
+    marginTop: spacing.xs,
+    marginLeft: spacing.lg,
+  },
+  evidenceRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     gap: spacing.sm,
   },
   cardActions: {
