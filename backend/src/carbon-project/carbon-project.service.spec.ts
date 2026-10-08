@@ -1,3 +1,4 @@
+import { InMemoryAuditLogRepository } from '../testing/in-memory-audit-log.repository';
 import type { IFarmDataRepository } from '../farm-data/farm-data.repository.interface';
 import { InMemoryFarmDataRepository } from '../testing/in-memory-farm-data.repository';
 import { describe, expect, it, beforeEach } from '@jest/globals';
@@ -187,7 +188,7 @@ describe('CarbonProjectService', () => {
     farmsService = new FakeFarmsService();
     consentService = new FakeConsentService();
     farmDataRepository = new InMemoryFarmDataRepository();
-    auditLog = new AuditLog();
+    auditLog = new AuditLog(new InMemoryAuditLogRepository());
 
     service = new CarbonProjectService(
       projectRepository,

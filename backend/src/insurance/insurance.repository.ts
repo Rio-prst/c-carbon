@@ -1,50 +1,70 @@
 import { Injectable } from '@nestjs/common';
-import { randomUUID } from 'node:crypto';
+import { PrismaService } from '../prisma/prisma.service';
+import type {
+  CreateInsuranceInput,
+  IInsuranceRepository,
+  InsuranceRecord,
+  InsuranceStatus,
+} from './insurance.repository.interface';
 
-export const INSURANCE_REPOSITORY = Symbol('INSURANCE_REPOSITORY');
-
-export type InsuranceStatus = 'PENDING' | 'ACTIVE' | 'EXPIRED';
-
-export type CreateInsuranceInput = {
-  farmId: string;
-  partner: string;
-  status: InsuranceStatus;
-};
-
-export type InsuranceRecord = {
+type InsuranceRow = {
   id: string;
   farmId: string;
   partner: string;
-  status: InsuranceStatus;
+  status: string;
   createdAt: Date;
   updatedAt: Date;
 };
 
-export interface IInsuranceRepository {
-  findByFarmId(farmId: string): Promise<InsuranceRecord | null>;
+const SELECT = {
+  id: true,
+  farmId: true,
+  partner: true,
+  status: true,
+  createdAt: true,
+  updatedAt: true,
+} as const;
 
-  create(input: CreateInsuranceInput): Promise<InsuranceRecord>;
+function toRecord(row: InsuranceRow): InsuranceRecord {
+  return {
+    id: row.id,
+    farmId: row.farmId,
+    partner: row.partner,
+    status: row.status as InsuranceStatus,
+    createdAt: row.createdAt,
+    updatedAt: row.updatedAt,
+  };
 }
 
+/**
+ * Persisted rather than held in a Map.
+ *
+ * docs/DATABASE.md §6 specifies farm 1:N insurance, so farm_id is indexed rather
+ * than unique and the read returns the most recent policy. The previous Map was
+ * keyed by farm, which quietly capped a farm at one policy for its lifetime.
+ */
 @Injectable()
 export class InsuranceRepository implements IInsuranceRepository {
-  private insuranceMap: Map<string, InsuranceRecord> = new Map();
+  constructor(private readonly prisma: PrismaService) {}
 
-  findByFarmId(farmId: string): Promise<InsuranceRecord | null> {
-    return Promise.resolve(this.insuranceMap.get(farmId) ?? null);
+  async findByFarmId(farmId: string): Promise<InsuranceRecord | null> {
+    const row = await this.prisma.insurance.findFirst({
+      where: { farmId },
+      orderBy: { createdAt: 'desc' },
+      select: SELECT,
+    });
+    return row ? toRecord(row) : null;
   }
 
-  create(input: CreateInsuranceInput): Promise<InsuranceRecord> {
-    const now = new Date();
-    const insurance: InsuranceRecord = {
-      id: randomUUID(),
-      farmId: input.farmId,
-      partner: input.partner,
-      status: input.status,
-      createdAt: now,
-      updatedAt: now,
-    };
-    this.insuranceMap.set(input.farmId, insurance);
-    return Promise.resolve(insurance);
+  async create(input: CreateInsuranceInput): Promise<InsuranceRecord> {
+    const row = await this.prisma.insurance.create({
+      data: {
+        farmId: input.farmId,
+        partner: input.partner,
+        status: input.status,
+      },
+      select: SELECT,
+    });
+    return toRecord(row);
   }
 }

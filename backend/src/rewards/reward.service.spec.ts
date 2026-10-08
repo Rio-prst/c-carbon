@@ -1,12 +1,13 @@
 import { RewardService } from './reward.service';
-import { RewardRepository } from './reward.repository';
+import type { IRewardRepository } from './reward.repository.interface';
+import { InMemoryRewardRepository } from '../testing/in-memory-reward.repository';
 
 describe('RewardService', () => {
   let service: RewardService;
-  let repo: RewardRepository;
+  let repo: IRewardRepository;
 
   beforeEach(() => {
-    repo = new RewardRepository();
+    repo = new InMemoryRewardRepository();
     service = new RewardService(repo);
   });
 

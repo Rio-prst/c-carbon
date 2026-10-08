@@ -1,50 +1,116 @@
 import { Injectable } from '@nestjs/common';
-import { randomUUID } from 'node:crypto';
+import { PrismaService } from '../prisma/prisma.service';
 import type {
   CreateScoreInput,
-  ScoreRecord,
   IScoreRepository,
+  ScoreBreakdown,
+  ScoreBreakdownByType,
+  ScoreRecord,
   ScoreType,
   StoredScore,
 } from './score.repository.interface';
 
+type ScoreRow = {
+  id: string;
+  farmId: string;
+  scoreType: string;
+  value: { toString(): string };
+  breakdown: unknown;
+  isProvisional: boolean;
+  calculatedAt: Date;
+  supersededAt: Date | null;
+};
+
+function toScoreRecord(row: ScoreRow): ScoreRecord {
+  return {
+    id: row.id,
+    farmId: row.farmId,
+    scoreType: row.scoreType as ScoreType,
+    value: Number(row.value.toString()),
+    // JSONB round-trips to plain numbers, which is what both breakdowns are.
+    breakdown: row.breakdown as ScoreBreakdown,
+    isProvisional: row.isProvisional,
+    calculatedAt: row.calculatedAt,
+  };
+}
+
+/**
+ * Persisted rather than held in a Map.
+ *
+ * The FSS is one of the two scores the farmer is shown, and while it lived in
+ * memory it disappeared on restart and had to be rebuilt by the seed. The
+ * unique pair on farm and score type keeps the overwrite semantics the previous
+ * implementation had, so callers see no difference.
+ */
 @Injectable()
 export class ScoreRepository implements IScoreRepository {
-  private scoreMap: Map<string, Map<ScoreType, ScoreRecord>> = new Map();
+  constructor(private readonly prisma: PrismaService) {}
 
-  private getFarmScores(farmId: string): Map<ScoreType, ScoreRecord> {
-    if (!this.scoreMap.has(farmId)) {
-      this.scoreMap.set(farmId, new Map());
-    }
-    return this.scoreMap.get(farmId)!;
+  async save(input: CreateScoreInput): Promise<ScoreRecord> {
+    const row = await this.prisma.score.upsert({
+      where: {
+        farmId_scoreType: {
+          farmId: input.farmId,
+          scoreType: input.scoreType,
+        },
+      },
+      // Overwrites rather than appending, matching the previous Map behaviour
+      // where one farm and score type held a single score.
+      create: {
+        farmId: input.farmId,
+        scoreType: input.scoreType,
+        value: input.value,
+        breakdown: input.breakdown,
+        isProvisional: input.isProvisional,
+      },
+      update: {
+        value: input.value,
+        breakdown: input.breakdown,
+        isProvisional: input.isProvisional,
+        calculatedAt: new Date(),
+        // A fresh calculation supersedes whatever was stored, which is what a
+        // history table would key on if it is ever added.
+        supersededAt: null,
+      },
+      select: {
+        id: true,
+        farmId: true,
+        scoreType: true,
+        value: true,
+        breakdown: true,
+        isProvisional: true,
+        calculatedAt: true,
+        supersededAt: true,
+      },
+    });
+    return toScoreRecord(row);
   }
 
-  save(input: CreateScoreInput): Promise<ScoreRecord> {
-    const farmScores = this.getFarmScores(input.farmId);
-    const score: ScoreRecord = {
-      id: randomUUID(),
-      farmId: input.farmId,
-      scoreType: input.scoreType,
-      value: input.value,
-      breakdown: input.breakdown,
-      isProvisional: input.isProvisional,
-      calculatedAt: new Date(),
-    };
-    farmScores.set(input.scoreType, score);
-    return Promise.resolve(score);
-  }
-
-  findByFarmId<K extends ScoreType>(
+  async findByFarmId<K extends ScoreType>(
     farmId: string,
     scoreType: K,
   ): Promise<StoredScore<K> | null> {
-    const farmScores = this.scoreMap.get(farmId);
-    if (!farmScores) return Promise.resolve(null);
-    // The map stores one record per score type but does not keep the
-    // breakdown/score-type correlation, so it is restored on read. The type
-    // system guarantees the two were written together via `CreateScoreInput`.
-    return Promise.resolve(
-      (farmScores.get(scoreType) as StoredScore<K> | undefined) ?? null,
-    );
+    const row = await this.prisma.score.findUnique({
+      where: { farmId_scoreType: { farmId, scoreType } },
+      select: {
+        id: true,
+        farmId: true,
+        scoreType: true,
+        value: true,
+        breakdown: true,
+        isProvisional: true,
+        calculatedAt: true,
+        supersededAt: true,
+      },
+    });
+
+    if (!row) return null;
+    // The row's breakdown is whichever shape its score type uses. The write
+    // path is typed, so the two cannot disagree.
+    const { breakdown, ...rest } = toScoreRecord(row);
+    return {
+      ...rest,
+      breakdown: breakdown as ScoreBreakdownByType[K],
+    };
   }
 }
