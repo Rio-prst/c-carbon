@@ -10,7 +10,8 @@ import { jest } from '@jest/globals';
 import type { JwtPayload } from '../auth/types/jwt-payload';
 import { ReadinessService } from './readiness.service';
 import { CRSService } from './crs.service';
-import { ScoreRepository } from '../scoring/score.repository';
+import type { IScoreRepository } from '../scoring/score.repository.interface';
+import { InMemoryScoreRepository } from '../testing/in-memory-score.repository';
 import type { FarmDataRecord } from '../farm-data/farm-data.repository.interface';
 import type { CRSResult, ICRSService } from './crs.service.interface';
 
@@ -50,7 +51,7 @@ describe('ReadinessService', () => {
   let service: ReadinessService;
   let dataRepository: IFarmDataRepository;
   let evidenceRepository: IEvidenceRepository;
-  let scoreRepository: ScoreRepository;
+  let scoreRepository: IScoreRepository;
   let crsService: CRSService;
   let calculateCRS: jest.SpiedFunction<ICRSService['calculateCRS']>;
   let farmsService: {
@@ -62,7 +63,7 @@ describe('ReadinessService', () => {
   beforeEach(() => {
     dataRepository = new InMemoryFarmDataRepository();
     evidenceRepository = new InMemoryEvidenceRepository();
-    scoreRepository = new ScoreRepository();
+    scoreRepository = new InMemoryScoreRepository();
     crsService = new CRSService({
       isProvisional: true,
       isSoilPracticeEligible: () => true,

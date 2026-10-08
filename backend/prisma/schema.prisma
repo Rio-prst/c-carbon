@@ -104,6 +104,33 @@ model AuditLog {
   @@map("audit_logs")
 }
 
+/// The latest calculated score for a farm, one row per farm and score type.
+///
+/// docs/DATABASE.md §7 asks for historical records "where required". No screen
+/// in the MVP reads a score history, and MVP-SCOPE.md places score history
+/// charts in P1/P2, so this stores only the current value. superseded_at is
+/// present so adding history later needs no schema change, but nothing writes
+/// it yet and findByFarmId would still return one row.
+///
+/// The breakdown is JSON because FSS is camelCase and CRS is snake_case; a
+/// fixed column set could not hold both without a union of every component.
+model Score {
+  id            String   @id @default(uuid())
+  farmId        String   @map("farm_id")
+  scoreType     String   @map("score_type") @db.VarChar(10)
+  value         Decimal  @db.Decimal(6, 2)
+  breakdown     Json
+  isProvisional Boolean  @default(true) @map("is_provisional")
+  calculatedAt  DateTime @default(now()) @map("calculated_at")
+  supersededAt  DateTime? @map("superseded_at")
+
+  farm Farm @relation(fields: [farmId], references: [id], onDelete: Cascade)
+
+  @@unique([farmId, scoreType])
+  @@index([farmId])
+  @@map("scores")
+}
+
 /// Corporate identity attached one-to-one to a user, per docs/DATABASE.md §11.
 /// Registration only creates farmers, so this row is provisioned separately;
 /// the demo seed is the MVP path.
@@ -139,6 +166,7 @@ model Farm {
   seasons FarmSeason[]
   data    FarmData[]
   projects ProjectFarm[]
+  scores  Score[]
 
   @@index([userId])
   @@map("farms")

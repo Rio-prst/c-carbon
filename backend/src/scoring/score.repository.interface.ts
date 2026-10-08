@@ -58,8 +58,17 @@ export type ScoreRecord = {
   calculatedAt: Date;
 };
 
-/** A stored record narrowed to the breakdown shape its score type uses. */
-export type StoredScore<K extends ScoreType> = ScoreRecord & {
+/**
+ * A stored record narrowed to the breakdown shape its score type uses.
+ *
+ * `Omit` rather than an intersection: `ScoreRecord & { breakdown: CRSBreakdown }`
+ * would demand the breakdown satisfy both the union and the concrete shape, which
+ * no value can, so callers could not construct one without a cast.
+ */
+export type StoredScore<K extends ScoreType> = Omit<
+  ScoreRecord,
+  'breakdown'
+> & {
   breakdown: ScoreBreakdownByType[K];
 };
 
