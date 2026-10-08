@@ -1,3 +1,5 @@
+import type { IFarmDataRepository } from '../farm-data/farm-data.repository.interface';
+import { InMemoryFarmDataRepository } from '../testing/in-memory-farm-data.repository';
 import { describe, expect, it, beforeEach } from '@jest/globals';
 import {
   ConflictException,
@@ -6,7 +8,6 @@ import {
 } from '@nestjs/common';
 import { CarbonProjectService } from './carbon-project.service';
 import { ProjectEligibilityProvider } from './project-eligibility.provider';
-import { FarmDataRepository } from '../farm-data/farm-data.repository';
 import { AuditLog } from '../admin/audit-log.service';
 import type {
   CarbonProjectRecord,
@@ -162,7 +163,7 @@ describe('CarbonProjectService', () => {
   let projectRepository: FakeProjectRepository;
   let farmsService: FakeFarmsService;
   let consentService: FakeConsentService;
-  let farmDataRepository: FarmDataRepository;
+  let farmDataRepository: IFarmDataRepository;
   let auditLog: AuditLog;
 
   /** Adds `count` rubber farms whose data is verified and eligible. */
@@ -185,7 +186,7 @@ describe('CarbonProjectService', () => {
     projectRepository = new FakeProjectRepository([project()]);
     farmsService = new FakeFarmsService();
     consentService = new FakeConsentService();
-    farmDataRepository = new FarmDataRepository();
+    farmDataRepository = new InMemoryFarmDataRepository();
     auditLog = new AuditLog();
 
     service = new CarbonProjectService(
