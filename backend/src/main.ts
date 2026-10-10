@@ -4,12 +4,9 @@ import { AppModule } from './app.module';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
-  // Enable CORS for mobile/web clients
+  // Enable CORS for mobile and web clients (including Vercel deployment)
   app.enableCors({
-    origin: [
-      'http://localhost:8081', // Expo dev server
-      'http://localhost:19006', // Expo web
-    ],
+    origin: true,
     credentials: true,
   });
 

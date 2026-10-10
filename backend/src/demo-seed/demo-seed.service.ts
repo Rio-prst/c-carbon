@@ -111,25 +111,25 @@ export class DemoSeedService implements OnModuleInit {
     await this.ensureConsent(farmerB.id);
 
     const farmA1 = await this.ensureFarm(farmerA.id, {
-      name: 'Lahan Padi Sawah',
+      name: 'Kebun Karet Rakyat Mandiri',
       lat: -6.9,
       lng: 107.6,
       landAreaHa: 2.5,
-      commodity: 'Padi',
+      commodity: 'Karet',
     });
     const farmA2 = await this.ensureFarm(farmerA.id, {
-      name: 'Lahan Kopi',
+      name: 'Kebun Karet Agroforestri',
       lat: -6.85,
       lng: 107.65,
       landAreaHa: 1.8,
-      commodity: 'Kopi',
+      commodity: 'Karet',
     });
     const farmB1 = await this.ensureFarm(farmerB.id, {
-      name: 'Lahan Jagung',
+      name: 'Kebun Karet Hutan Lestari',
       lat: -6.95,
       lng: 107.55,
       landAreaHa: 3.2,
-      commodity: 'Jagung',
+      commodity: 'Karet',
     });
 
     // Carbon projects are scoped to rubber per the competition brief, so three
