@@ -1,10 +1,15 @@
 {
   "version": 2,
   "buildCommand": "pnpm run build",
-  "rewrites": [
+  "functions": {
+    "api/index.js": {
+      "includeFiles": "dist/**"
+    }
+  },
+  "routes": [
     {
-      "source": "/(.*)",
-      "destination": "/api"
+      "src": "/(.*)",
+      "dest": "/api/index.js"
     }
   ]
 }

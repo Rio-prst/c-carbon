@@ -19,6 +19,23 @@ async function bootstrap() {
 }
 
 module.exports = async (req, res) => {
-  const instance = await bootstrap();
-  instance(req, res);
+  try {
+    const instance = await bootstrap();
+    if (req.url && req.url.startsWith('/api')) {
+      req.url = req.url.replace(/^\/api/, '') || '/';
+    }
+    instance(req, res);
+  } catch (err) {
+    console.error('SERVERLESS BOOTSTRAP ERROR:', err);
+    res.statusCode = 500;
+    res.setHeader('Content-Type', 'application/json');
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.end(
+      JSON.stringify({
+        error: 'SERVERLESS_BOOTSTRAP_ERROR',
+        message: err.message,
+        stack: err.stack,
+      }),
+    );
+  }
 };
