@@ -3,8 +3,7 @@
   "buildCommand": "pnpm run build",
   "functions": {
     "api/index.js": {
-      "includeFiles": "dist/**",
-      "runtime": "nodejs22.x"
+      "includeFiles": "dist/**"
     }
   },
   "routes": [
